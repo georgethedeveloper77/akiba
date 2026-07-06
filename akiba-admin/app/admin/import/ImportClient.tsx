@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import {
-  importRates, importCmaComposition,
-  type ImportResult, type CmaImportResult,
+  importRates, importCmaComposition, importReturns,
+  type ImportResult, type CmaImportResult, type ReturnsImportResult,
 } from "./actions";
 
 function today() {
@@ -14,6 +14,13 @@ function lastQuarterEnd() {
   const d = new Date();
   const q = Math.floor(d.getMonth() / 3);
   const end = new Date(d.getFullYear(), q * 3, 0);
+  return new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+// Fact sheets are published for a completed month, so default the statement
+// month to the end of last month.
+function lastMonthEnd() {
+  const d = new Date();
+  const end = new Date(d.getFullYear(), d.getMonth(), 0);
   return new Date(end.getTime() - end.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 }
 
@@ -50,18 +57,20 @@ const inputCls = "rounded-md border border-line bg-panel2 px-3 py-1.5 text-sm te
 const fileCls = "text-xs text-faint file:mr-2 file:rounded file:border file:border-line file:bg-panel2 file:px-2 file:py-1 file:text-xs file:text-mute";
 
 export function ImportClient() {
-  const [tab, setTab] = useState<"rates" | "cma">("rates");
+  const [tab, setTab] = useState<"rates" | "cma" | "returns">("rates");
+  const label = (t: "rates" | "cma" | "returns") =>
+    t === "rates" ? "Weekly rates" : t === "cma" ? "CMA report" : "Fund returns";
   return (
     <div className="space-y-5">
       <div className="inline-flex items-center gap-0.5 rounded-lg border border-line bg-panel p-0.5">
-        {(["rates", "cma"] as const).map((t) => (
+        {(["rates", "cma", "returns"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={"rounded-md px-3 py-1.5 text-sm " + (tab === t ? "bg-panel2 text-ink" : "text-mute hover:text-ink")}>
-            {t === "rates" ? "Weekly rates" : "CMA report"}
+            {label(t)}
           </button>
         ))}
       </div>
-      {tab === "rates" ? <RatesTab /> : <CmaTab />}
+      {tab === "rates" ? <RatesTab /> : tab === "cma" ? <CmaTab /> : <ReturnsTab />}
     </div>
   );
 }
@@ -303,6 +312,125 @@ function CmaTab() {
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Fund returns ───────────────────────────────────────────────────────────
+function ReturnsTab() {
+  const [result, setResult] = useState<ReturnsImportResult | null>(null);
+  const [showMatched, setShowMatched] = useState(false);
+  const [paste, setPaste] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [pending, start] = useTransition();
+  const submit = (fd: FormData) => start(async () => setResult(await importReturns(fd)));
+
+  // live count: a line with a name and at least one numeric in cols 1..9
+  const parsed = useMemo(() => {
+    let n = 0;
+    for (const raw of paste.split(/\r?\n/)) {
+      const line = raw.trim();
+      if (!line || /^name/i.test(line)) continue;
+      const cols = line.split(/[,\t]/);
+      if (cols.length < 2 || !cols[0].trim()) continue;
+      const anyNum = cols.slice(1, 10).some((c) => {
+        const v = Number(String(c).replace(/[^0-9.\-]/g, ""));
+        return c.trim() !== "" && Number.isFinite(v);
+      });
+      if (anyNum) n++;
+    }
+    return n;
+  }, [paste]);
+
+  const total = result ? result.matched + result.unmatched.length : 0;
+  const rate = total ? Math.round((result!.matched / total) * 100) : 0;
+
+  return (
+    <div className="space-y-5">
+      <Preflight tone="warn"
+        msg="Trailing performance from each MANAGER's monthly fund fact sheet (not CMA — that's quarterly composition). Blank cells are left untouched, so a partial sheet never wipes an existing figure and a young fund with no 5Y simply stays empty." />
+
+      <form action={submit} className="space-y-4 rounded-xl border border-line bg-panel p-5">
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] uppercase tracking-wider text-faint">Statement month</span>
+            <input type="date" name="as_of" defaultValue={lastMonthEnd()} className={inputCls} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] uppercase tracking-wider text-faint">CSV file (optional)</span>
+            <input type="file" name="file" accept=".csv,.tsv,text/csv"
+              onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")} className={fileCls} />
+          </label>
+        </div>
+        {fileName && <p className="text-xs text-mute">Loaded <code className="text-gold">{fileName}</code> — file takes precedence over pasted rows.</p>}
+        <label className="flex flex-col gap-1">
+          <span className="text-[11px] uppercase tracking-wider text-faint">…or paste rows</span>
+          <textarea name="pasted" rows={8} value={paste} onChange={(e) => setPaste(e.target.value)}
+            placeholder={"Nabo Money Market Fund,12.5,13.8,15.1,14.6,10.9,12.0,10.0,1.30,0.80\nNabo Fixed Income Fund,12.8,13.8,14.3,15.3,11.8,12.9,11.3,1.2,0.8"}
+            className={"w-full font-mono " + inputCls} />
+        </label>
+        {!fileName && paste.trim() && (
+          <Preflight tone={parsed ? "ok" : "warn"}
+            msg={parsed ? `${parsed} return row${parsed === 1 ? "" : "s"} detected.` : "No parseable rows yet — each line needs a name and at least one number."} />
+        )}
+        <div className="flex items-center gap-3">
+          <button disabled={pending}
+            className="rounded-md border border-gold/50 bg-gold/10 px-4 py-1.5 text-sm font-medium text-gold hover:bg-gold/20 disabled:opacity-50">
+            {pending ? "Importing…" : "Import returns"}
+          </button>
+        </div>
+        <p className="text-xs text-faint">
+          Columns: <code>name, ytd, 1y, 3y, 5y, bench1y, bench3y, bench5y, best, worst</code>. Leave a cell blank to skip it. An optional 11th column (<code>YYYY-MM-DD</code>) overrides the statement month for that row.
+        </p>
+      </form>
+
+      {result && (
+        <div className="rounded-xl border border-line bg-panel p-5">
+          {result.error ? <p className="text-sm text-bad">{result.error}</p> : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <Stat label="Updated" value={String(result.matched)} tone="ok" />
+                <Stat label="Unmatched" value={String(result.unmatched.length)} tone={result.unmatched.length ? "warn" : "faint"} />
+                <Stat label="Match rate" value={`${rate}%`} tone={rate >= 90 ? "ok" : rate >= 60 ? "warn" : "faint"} />
+              </div>
+              <p className="text-xs text-faint">as of {result.asOf}</p>
+
+              {result.matches.length > 0 && (
+                <div>
+                  <button onClick={() => setShowMatched((s) => !s)}
+                    className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-faint hover:text-mute">
+                    <Chevron open={showMatched} /> Matched {result.matches.length}
+                  </button>
+                  {showMatched && (
+                    <div className="mt-2 max-h-56 space-y-1 overflow-y-auto">
+                      {result.matches.map((m, i) => (
+                        <div key={i} className="flex items-start gap-2 text-xs">
+                          <span className="w-48 shrink-0 text-mute">{m.name}</span>
+                          <span className="mt-0.5 text-faint"><ArrowRight /></span>
+                          <span className="flex-1 text-ink">{m.fund}</span>
+                          <span className="tnum text-gold">{m.y1 != null ? `${m.y1}% 1y` : "—"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {result.unmatched.length > 0 && (
+                <div>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wider text-warn">Unmatched — no fund resolved</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {result.unmatched.map((n) => (
+                      <span key={n} className="rounded-md border border-warn/30 bg-warn/5 px-2 py-0.5 text-xs text-mute">{n}</span>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-faint">Rename in your sheet to match the fund, or add the fund first, then re-import (idempotent).</p>
                 </div>
               )}
             </div>

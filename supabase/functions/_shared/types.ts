@@ -45,6 +45,28 @@ export interface SnapshotFund {
   verified: boolean;
   featured: boolean;
   company_id: string | null;
+
+  // Profile & terms (migration 0026) — static per-fund facts from fact sheets.
+  inception_date: string | null;  // YYYY-MM-DD; "operating since" trust signal
+  benchmark_key: string | null;   // tbill_91 | tbill_182 | tbill_364 | cbr
+  expense_ratio: number | null;   // all-in TER, % p.a.
+  redemption_fee: number | null;  // exit fee, %
+  lock_in_months: number | null;  // 0/null = no lock-in
+  top_up_min: number | null;      // subsequent top-up minimum
+  objective: string | null;       // one-line fund aim
+
+  // Trailing performance (migration 0027) — latest standing from the manager's
+  // monthly fact sheet. Per-horizon benchmark so vs-benchmark is on-basis.
+  return_ytd: number | null;      // fund, % year to date
+  return_1y: number | null;       // fund, annualised %
+  return_3y: number | null;
+  return_5y: number | null;
+  bench_1y: number | null;        // stated benchmark, annualised %
+  bench_3y: number | null;
+  bench_5y: number | null;
+  best_month: number | null;      // best monthly return, trailing 12 mo, %
+  worst_month: number | null;     // worst monthly return, trailing 12 mo, %
+  returns_as_of: string | null;   // YYYY-MM-DD, fact-sheet month
 }
 
 export interface SnapshotCompany {
@@ -59,6 +81,11 @@ export interface SnapshotCompany {
   market_share: number | null;
   rank: number | null;
   aum_as_of: string | null;
+
+  // Custody chain (migration 0026) — manager-family trust signals.
+  trustee: string | null;
+  custodian: string | null;
+  auditor: string | null;
 }
 
 export interface SnapshotAgent {

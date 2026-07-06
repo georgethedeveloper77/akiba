@@ -4,11 +4,12 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { republishSnapshot, slugify, strOrNull } from "@/lib/publish";
 
-function refresh() {
+function refresh(id?: string) {
   revalidatePath("/admin/companies");
   revalidatePath("/admin/agents");
   revalidatePath("/admin/funds");
   revalidatePath("/admin");
+  if (id) revalidatePath(`/admin/companies/${id}`);
 }
 
 const TYPES = ["fund_manager", "insurer", "sacco", "government"];
@@ -45,6 +46,25 @@ export async function updateCompany(formData: FormData) {
     .eq("id", id);
   await republishSnapshot();
   refresh();
+}
+
+// Governance / custody chain (trustee · custodian · auditor). Manager-level
+// trust signals that ride in the snapshot (0026) and surface on the app's fund
+// detail page. Separate writer from updateCompany so a table edit that omits
+// these never nulls them.
+export async function updateCustody(formData: FormData) {
+  const id = String(formData.get("id"));
+  if (!id) return;
+  await supabaseAdmin()
+    .from("companies")
+    .update({
+      trustee: strOrNull(formData.get("trustee")),
+      custodian: strOrNull(formData.get("custodian")),
+      auditor: strOrNull(formData.get("auditor")),
+    })
+    .eq("id", id);
+  await republishSnapshot();
+  refresh(id);
 }
 
 // Inline brand-colour set from the swatch.

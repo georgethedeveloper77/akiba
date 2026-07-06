@@ -16,7 +16,7 @@ env:
       - RUNTIME
 
   - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
-    value: sb_publishable_Nn3p9o-iA2wzcZ8sfev1qw_PkkOcNtl # copy from Supabase -> Project Settings -> API -> anon/public
+    value: NEXT_PUBLIC_SUPABASE_ANON_KEY # copy from Supabase -> Project Settings -> API -> anon/public
     availability:
       - BUILD
       - RUNTIME

@@ -17,11 +17,20 @@ const _typeNames = {
   'special': 'Special',
 };
 
+// Human labels for the stated-benchmark key (funds.benchmark_key, 0026).
+const _benchLabels = {
+  'tbill_91': '91-day T-bill',
+  'tbill_182': '182-day T-bill',
+  'tbill_364': '364-day T-bill',
+  'cbr': 'Central Bank Rate',
+};
+
 /// Best-MMF hero (v6 `.hero`), matched to the mockup: brand-washed card with a
 /// leading logo, name + type tag, a "Best rate" pill, a 44px count-up rate with
 /// `% gross`, the net / real / min triad, and a brand sparkline carrying a
-/// dashed 91-day T-bill reference + legend. Brand hue drives every accent; the
-/// rate itself stays `text` for legibility. Deltas use Material chevrons.
+/// dashed reference for the fund's OWN stated benchmark (0026) plus legend and
+/// an explicit vs-benchmark delta. Brand hue drives every accent; the rate
+/// itself stays `text` for legibility. Deltas use Material chevrons.
 class BestFundHero extends ConsumerWidget {
   const BestFundHero(
     this.fund, {
@@ -60,6 +69,20 @@ class BestFundHero extends ConsumerWidget {
     final tag =
         '${_typeNames[fund.fundType] ?? fund.category} \u00b7 ${fund.currency}';
     final d = delta;
+
+    // The fund's OWN stated benchmark (0026), replacing the hardcoded 91-day.
+    // Falls back to the 91-day so the reference line always renders (matches
+    // the prior behaviour, and every MMF was backfilled to tbill_91 anyway).
+    final benchRate =
+        cfg.benchmarkRate(fund.benchmarkConfigKey ?? 'benchmark.tbill_91',
+            cfg.tbill91Pct);
+    final benchLabel =
+        _benchLabels[fund.benchmarkKey ?? 'tbill_91'] ?? '91-day T-bill';
+    // Explicit gross-vs-benchmark spread (same basis as the fact sheet). Null
+    // for non-yielding funds, so the annotation simply doesn't show.
+    final benchDelta = (fund.showsYield && fund.currentRate != null)
+        ? fund.currentRate! - benchRate
+        : null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -244,7 +267,7 @@ class BestFundHero extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  // ── chart: brand line + dashed 91-day reference ────────
+                  // ── chart: brand line + dashed benchmark reference ─────
                   if (fund.spark.length >= 2) ...[
                     const SizedBox(height: 6),
                     SizedBox(
@@ -254,7 +277,7 @@ class BestFundHero extends ConsumerWidget {
                         painter: _HeroSpark(
                           fund.spark,
                           tint,
-                          benchmark: cfg.tbill91Pct,
+                          benchmark: benchRate,
                           benchColor: c.muted,
                         ),
                       ),
@@ -264,10 +287,21 @@ class BestFundHero extends ConsumerWidget {
                       children: [
                         _Lg(color: tint, label: 'Fund rate'),
                         const SizedBox(width: 14),
-                        _Lg(
-                            color: c.muted,
-                            label: '91-day T-bill',
-                            dashed: true),
+                        _Lg(color: c.muted, label: benchLabel, dashed: true),
+                        if (benchDelta != null) ...[
+                          const Spacer(),
+                          Text(
+                            '${benchDelta >= 0 ? '+' : ''}${benchDelta.toStringAsFixed(2)} pts',
+                            style: TextStyle(
+                                color: c.delta(benchDelta),
+                                fontFamily: AkibaFonts.mono,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures()
+                                ]),
+                          ),
+                        ],
                       ],
                     ),
                   ],

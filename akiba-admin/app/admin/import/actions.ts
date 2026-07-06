@@ -207,3 +207,119 @@ export async function importCmaComposition(
   revalidatePath("/admin");
   return { matched: matchedIds.size, unmatchedCma, uncovered, error: null, period };
 }
+
+// ── Fund returns import (Bucket B) ─────────────────────────────────────────
+// Monthly trailing performance from each manager's fund fact sheet. One CSV
+// row per fund:
+//   name, ytd, 1y, 3y, 5y, bench1y, bench3y, bench5y, best, worst [, as_of]
+// The statement month is set once in the UI and stamps returns_as_of on every
+// row; an optional 11th column overrides it per row when a manager's sheet
+// lags. Blank cells are LEFT UNTOUCHED (a young fund with no 5Y keeps null;
+// a partial sheet never wipes an existing figure) — provided cells overwrite.
+// Names resolve through the same tolerant matcher as the weekly rates lane.
+
+const retNum = (s: string | undefined): number | null => {
+  if (s == null) return null;
+  const t = s.replace(/[^0-9.\-]/g, "").trim();
+  if (!t || t === "-" || t === ".") return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+};
+
+interface ReturnsRow {
+  name: string;
+  ytd: number | null; y1: number | null; y3: number | null; y5: number | null;
+  b1: number | null; b3: number | null; b5: number | null;
+  best: number | null; worst: number | null;
+  asOf: string | null; // optional per-row override of the statement month
+}
+
+export interface ReturnsImportResult {
+  matched: number;
+  matches: { name: string; fund: string; y1: number | null }[];
+  unmatched: string[];
+  error: string | null;
+  asOf: string;
+}
+
+export async function importReturns(formData: FormData): Promise<ReturnsImportResult> {
+  const asOf = String(formData.get("as_of") ?? "").trim();
+  const file = formData.get("file") as File | null;
+  const pasted = String(formData.get("pasted") ?? "");
+  const text = file && file.size > 0 ? await file.text() : pasted;
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf)) return { matched: 0, matches: [], unmatched: [], error: "Pick the statement month (YYYY-MM-DD).", asOf };
+  if (!text.trim()) return { matched: 0, matches: [], unmatched: [], error: "Paste rows or choose a CSV.", asOf };
+
+  const rows: ReturnsRow[] = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const cols = line.split(/[,\t]/).map((c) => c.trim().replace(/^"|"$/g, ""));
+    if (cols.length < 2) continue;
+    const name = cols[0];
+    if (!name || /^name$/i.test(name)) continue; // skip header
+    const r: ReturnsRow = {
+      name,
+      ytd: retNum(cols[1]), y1: retNum(cols[2]), y3: retNum(cols[3]), y5: retNum(cols[4]),
+      b1: retNum(cols[5]), b3: retNum(cols[6]), b5: retNum(cols[7]),
+      best: retNum(cols[8]), worst: retNum(cols[9]),
+      asOf: cols[10] && /^\d{4}-\d{2}-\d{2}$/.test(cols[10]) ? cols[10] : null,
+    };
+    const anyNum = [r.ytd, r.y1, r.y3, r.y5, r.b1, r.b3, r.b5, r.best, r.worst]
+      .some((v) => v != null);
+    if (!anyNum) continue; // a name with no numbers isn't a data row
+    rows.push(r);
+  }
+  if (rows.length === 0) return { matched: 0, matches: [], unmatched: [], error: "No parseable rows — each line needs a name and at least one number.", asOf };
+
+  const db = supabaseAdmin();
+  const { data: funds } = await db.from("funds").select("id,name,currency").eq("kind", "fund");
+  const list = funds ?? [];
+  const byNorm = new Map<string, { id: string; name: string }>(list.map((f) => [norm(f.name), { id: f.id, name: f.name }]));
+  const idx = list.map((f) => ({ id: f.id, name: f.name, cur: f.currency as string, tok: tokset(f.name) }));
+
+  function resolve(name: string): { id: string; name: string } | null {
+    const exact = byNorm.get(norm(name));
+    if (exact) return exact;
+    const aliased = ALIAS[norm(name)];
+    if (aliased && byNorm.get(aliased)) return byNorm.get(aliased)!;
+    const rc = guessCur(name), rt = tokset(name);
+    let best: typeof idx[number] | null = null, bs = 0, second = 0;
+    for (const f of idx) {
+      let s = jaccard(rt, f.tok);
+      if (f.cur === rc) s += 0.15;
+      if (s > bs) { second = bs; bs = s; best = f; } else if (s > second) second = s;
+    }
+    return best && bs >= 0.6 && bs - second >= 0.1 ? { id: best.id, name: best.name } : null;
+  }
+
+  const matches: { name: string; fund: string; y1: number | null }[] = [];
+  const unmatched: string[] = [];
+  let matched = 0;
+  for (const r of rows) {
+    const m = resolve(r.name);
+    if (!m) { unmatched.push(r.name); continue; }
+    const patch: Record<string, unknown> = {};
+    if (r.ytd != null) patch.return_ytd = r.ytd;
+    if (r.y1 != null) patch.return_1y = r.y1;
+    if (r.y3 != null) patch.return_3y = r.y3;
+    if (r.y5 != null) patch.return_5y = r.y5;
+    if (r.b1 != null) patch.bench_1y = r.b1;
+    if (r.b3 != null) patch.bench_3y = r.b3;
+    if (r.b5 != null) patch.bench_5y = r.b5;
+    if (r.best != null) patch.best_month = r.best;
+    if (r.worst != null) patch.worst_month = r.worst;
+    if (Object.keys(patch).length === 0) { unmatched.push(r.name); continue; }
+    patch.returns_as_of = r.asOf ?? asOf;
+    await db.from("funds").update(patch).eq("id", m.id);
+    matches.push({ name: r.name, fund: m.name, y1: r.y1 });
+    matched++;
+  }
+
+  if (matched) await republishSnapshot();
+  revalidatePath("/admin/import");
+  revalidatePath("/admin/funds");
+  revalidatePath("/admin");
+  return { matched, matches, unmatched, error: null, asOf };
+}

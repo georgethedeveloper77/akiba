@@ -50,6 +50,43 @@ export default async function FundDetail({ params }: { params: Promise<{ id: str
               <input type="checkbox" name="tax_free" defaultChecked={fund.tax_free} style={{ accentColor: "var(--gold)", width: 16, height: 16 }} />
               <span style={{ textTransform: "none", letterSpacing: 0, fontSize: 14, color: "var(--text)", fontWeight: 400 }}>Tax-free</span>
             </label>
+
+            {/* ── Profile & terms (fact-sheet fields; snapshot 0026) ──────── */}
+            <div style={{ gridColumn: "1 / -1", borderTop: "1px solid var(--line)", marginTop: 4, paddingTop: 12 }}>
+              <span style={{ fontFamily: "var(--mono)", fontSize: 10.5, letterSpacing: "1.4px", textTransform: "uppercase", color: "var(--faint)" }}>
+                Profile &amp; terms
+              </span>
+              <p style={{ fontSize: 11.5, color: "var(--faint)", marginTop: 4 }}>
+                Static facts from the fund fact sheet. Custody chain (trustee · custodian · auditor) is manager-level — set on the company.
+              </p>
+            </div>
+
+            <Field name="inception_date" label="Inception date" type="date" defaultValue={fund.inception_date ?? ""} />
+            <label className="field">
+              <span>Benchmark</span>
+              <select name="benchmark_key" defaultValue={fund.benchmark_key ?? ""} className="select">
+                <option value="">None</option>
+                <option value="tbill_91">91-day T-bill</option>
+                <option value="tbill_182">182-day T-bill</option>
+                <option value="tbill_364">364-day T-bill</option>
+                <option value="cbr">Central Bank Rate</option>
+              </select>
+            </label>
+            <Field name="expense_ratio" label="Expense ratio % (TER)" type="number" defaultValue={fund.expense_ratio ?? ""} />
+            <Field name="redemption_fee" label="Redemption fee %" type="number" defaultValue={fund.redemption_fee ?? ""} />
+            <Field name="lock_in_months" label="Lock-in (months)" type="number" defaultValue={fund.lock_in_months ?? ""} />
+            <Field name="top_up_min" label="Top-up min" type="number" defaultValue={fund.top_up_min ?? ""} />
+            <label className="field" style={{ gridColumn: "1 / -1" }}>
+              <span>Objective</span>
+              <textarea
+                name="objective"
+                defaultValue={fund.objective ?? ""}
+                rows={2}
+                className="input"
+                style={{ resize: "vertical" }}
+                placeholder="Capital preservation with above-inflation returns and same-day access."
+              />
+            </label>
           </div>
           <div className="pb" style={{ paddingTop: 0 }}>
             <button className="btn gold">Save changes</button>

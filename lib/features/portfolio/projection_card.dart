@@ -57,10 +57,17 @@ class _ProjectionCardState extends State<ProjectionCard> {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            '\u25b2 ${money(widget.currency, growth < 0 ? 0 : growth)} growth \u00b7 in $_horizon months',
-            style: TextStyle(
-                color: c.up, fontFamily: AkibaFonts.mono, fontSize: 12.5),
+          Row(
+            children: [
+              Icon(Icons.arrow_drop_up, size: 18, color: c.up),
+              Flexible(
+                child: Text(
+                  '${money(widget.currency, growth < 0 ? 0 : growth)} growth \u00b7 in $_horizon months',
+                  style: TextStyle(
+                      color: c.up, fontFamily: AkibaFonts.mono, fontSize: 12.5),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           SizedBox(height: 90, child: _MiniChart(series)),

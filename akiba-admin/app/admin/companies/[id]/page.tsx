@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { addFund, setRate, toggleRetail } from "../../funds/actions";
+import { updateCustody } from "../actions";
 import { IconCheck } from "../../_icons";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export default async function CompanyDetail({ params }: { params: Promise<{ id: 
   const db = supabaseAdmin();
 
   const { data: c } = await db.from("companies")
-    .select("id,name,type,brand_color,logo_url,website,verified,manager,aum_kes,market_share,rank,aum_as_of")
+    .select("id,name,type,brand_color,logo_url,website,verified,manager,aum_kes,market_share,rank,aum_as_of,trustee,custodian,auditor")
     .eq("id", id).maybeSingle();
   if (!c) notFound();
 
@@ -99,6 +100,37 @@ export default async function CompanyDetail({ params }: { params: Promise<{ id: 
           <Stat label="Funds" value={String(funds.length)} />
         </div>
       </header>
+
+      {/* governance / custody — manager-level trust signals for the app detail page */}
+      <form action={updateCustody} className="mt-4 rounded-xl border border-line bg-panel p-4">
+        <input type="hidden" name="id" value={c.id} />
+        <div className="mb-3 flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-medium text-ink">Governance &amp; custody</h2>
+            <p className="mt-0.5 text-xs text-faint">
+              Trustee · custodian · auditor. Surfaced on the app fund detail as trust signals, shared across this manager&rsquo;s funds.
+            </p>
+          </div>
+          <button className="shrink-0 rounded-md border border-gold/50 bg-gold/10 px-4 py-1.5 text-sm font-medium text-gold hover:bg-gold/20">Save</button>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider text-faint">Trustee</span>
+            <input name="trustee" defaultValue={c.trustee ?? ""} placeholder="KCB Bank"
+              className="rounded-md border border-line bg-panel2 px-3 py-1.5 text-sm text-ink outline-none placeholder:text-faint focus:border-gold/60" />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider text-faint">Custodian</span>
+            <input name="custodian" defaultValue={c.custodian ?? ""} placeholder="Stanbic Bank"
+              className="rounded-md border border-line bg-panel2 px-3 py-1.5 text-sm text-ink outline-none placeholder:text-faint focus:border-gold/60" />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider text-faint">Auditor</span>
+            <input name="auditor" defaultValue={c.auditor ?? ""} placeholder="Grant Thornton"
+              className="rounded-md border border-line bg-panel2 px-3 py-1.5 text-sm text-ink outline-none placeholder:text-faint focus:border-gold/60" />
+          </label>
+        </div>
+      </form>
 
       {/* inline add fund, scoped to this company */}
       <form action={addFund} className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-panel p-3">

@@ -19,8 +19,14 @@ import type {
 const BUCKET = "snapshots";
 const FILE = "funds-snapshot.json";
 
+// Profile fields (0026): inception, benchmark key, expense/redemption/lock-in,
+// top-up, objective. Returns fields (0027): trailing performance from monthly
+// fact sheets — YTD/1Y/3Y/5Y fund + 1Y/3Y/5Y benchmark, best/worst month, and
+// the fact-sheet month. All nullable — funds without them serialise as before.
 const FUND_FIELDS =
-  "id,name,manager,category,fund_type,currency,basis,retail,current_rate,tax_free,min_invest,mgmt_fee,site_url,invest_url,contact_url,logo_domain,verified,featured,company_id";
+  "id,name,manager,category,fund_type,currency,basis,retail,current_rate,tax_free,min_invest,mgmt_fee,site_url,invest_url,contact_url,logo_domain,verified,featured,company_id," +
+  "inception_date,benchmark_key,expense_ratio,redemption_fee,lock_in_months,top_up_min,objective," +
+  "return_ytd,return_1y,return_3y,return_5y,bench_1y,bench_3y,bench_5y,best_month,worst_month,returns_as_of";
 
 const INSURER_FIELDS =
   "id,name,company_id,currency,plans,min_premium,excess_pct,excess_min,claims_days,rating,motor_rate,benefits,logo_domain";
@@ -95,7 +101,7 @@ export async function publishSnapshot(
   const { data: companies } = await db
     .from("companies")
     .select(
-      "id,name,type,brand_color,logo_url,website,verified,aum_kes,market_share,rank,aum_as_of",
+      "id,name,type,brand_color,logo_url,website,verified,aum_kes,market_share,rank,aum_as_of,trustee,custodian,auditor",
     );
 
   // Agents + their company mapping.

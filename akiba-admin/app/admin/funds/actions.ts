@@ -34,6 +34,7 @@ const strOrNull = (v: FormDataEntryValue | null) => {
 
 const FUND_TYPES = ["mmf", "fixed_income", "equity", "balanced", "special"];
 const CURRENCIES = ["KES", "USD", "GBP", "EUR", "ZAR"];
+const BENCHMARK_KEYS = ["tbill_91", "tbill_182", "tbill_364", "cbr"];
 
 // Create a fund under a company. manager defaults to the company's name.
 export async function addFund(formData: FormData) {
@@ -125,6 +126,14 @@ export async function updateFund(formData: FormData) {
   if (!id) return;
   const type = String(formData.get("source_type"));
   const ft = formData.get("fund_type");
+
+  // Benchmark: only accept a known key, else clear it (constraint-safe).
+  const bkRaw = strOrNull(formData.get("benchmark_key"));
+  const benchmark_key = bkRaw && BENCHMARK_KEYS.includes(bkRaw) ? bkRaw : null;
+  // Lock-in is an int column — round any stray decimal.
+  const lockRaw = numOrNull(formData.get("lock_in_months"));
+  const lock_in_months = lockRaw == null ? null : Math.round(lockRaw);
+
   const patch: Record<string, unknown> = {
     name: String(formData.get("name")),
     manager: String(formData.get("manager")),
@@ -142,6 +151,14 @@ export async function updateFund(formData: FormData) {
     rate_source_url: strOrNull(formData.get("rate_source_url")),
     source_type: type === "manual" ? "manual" : "auto",
     status: String(formData.get("status")),
+    // Profile & terms (0026).
+    inception_date: strOrNull(formData.get("inception_date")),
+    benchmark_key,
+    expense_ratio: numOrNull(formData.get("expense_ratio")),
+    redemption_fee: numOrNull(formData.get("redemption_fee")),
+    lock_in_months,
+    top_up_min: numOrNull(formData.get("top_up_min")),
+    objective: strOrNull(formData.get("objective")),
   };
   // Only touch fund_type when the edit form actually sends it.
   if (ft !== null && FUND_TYPES.includes(String(ft))) patch.fund_type = String(ft);

@@ -14,7 +14,10 @@ export default function ImportPage() {
           today&apos;s date also updates the live rate.{" "}
           <strong className="font-medium text-ink">CMA report</strong>: apply the quarterly
           composition extraction JSON — powers the &ldquo;What it holds&rdquo; pie on the
-          Company page.
+          Company page.{" "}
+          <strong className="font-medium text-ink">Fund returns</strong>: paste each manager&apos;s
+          monthly fact-sheet figures (1Y/3Y/5Y vs benchmark, best/worst month) — powers the
+          Performance card.
         </p>
         <a
           href="/admin/import/template"

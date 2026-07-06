@@ -19,6 +19,12 @@ class Company {
   final double? marketShare; // % of total CIS AUM (0017)
   final String? aumAsOf; // YYYY-MM-DD quarter end
 
+  // Custody chain (snapshot 0026) — manager-family trust signals. Nullable;
+  // surfaced on the fund detail credentials strip, hidden when unseeded.
+  final String? trustee;
+  final String? custodian;
+  final String? auditor;
+
   const Company({
     required this.id,
     required this.name,
@@ -29,6 +35,9 @@ class Company {
     this.aumKes,
     this.marketShare,
     this.aumAsOf,
+    this.trustee,
+    this.custodian,
+    this.auditor,
   });
 
   factory Company.fromJson(Map<String, dynamic> j) => Company(
@@ -41,5 +50,8 @@ class Company {
         aumKes: (j['aum_kes'] as num?)?.toDouble(),
         marketShare: (j['market_share'] as num?)?.toDouble(),
         aumAsOf: j['aum_as_of'] as String?,
+        trustee: j['trustee'] as String?,
+        custodian: j['custodian'] as String?,
+        auditor: j['auditor'] as String?,
       );
 }
