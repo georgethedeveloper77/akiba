@@ -1,0 +1,1117 @@
+{
+  "period": "2026-03-31",
+  "source_url": null,
+  "schemes": [
+    {
+      "name": "Sanlam Unit Trust Scheme",
+      "aum": 161017593553,
+      "marketShare": 18.9
+    },
+    {
+      "name": "Standard Investment Trust Fund",
+      "aum": 153153595139,
+      "marketShare": 18
+    },
+    {
+      "name": "CIC Unit Trust Scheme",
+      "aum": 103168617145,
+      "marketShare": 12.1
+    },
+    {
+      "name": "Britam Unit Trust Scheme",
+      "aum": 61857396056,
+      "marketShare": 7.3
+    },
+    {
+      "name": "NCBA Unit Trust Scheme",
+      "aum": 54294581715,
+      "marketShare": 6.4
+    },
+    {
+      "name": "Old Mutual Unit Trust Scheme",
+      "aum": 34949481280,
+      "marketShare": 4.1
+    },
+    {
+      "name": "Absa Unit Trust Funds",
+      "aum": 29445586879,
+      "marketShare": 3.5
+    },
+    {
+      "name": "Jubilee Unit Trust Scheme",
+      "aum": 26914858646,
+      "marketShare": 3.2
+    },
+    {
+      "name": "Coop Unit Trust Scheme",
+      "aum": 25564263558,
+      "marketShare": 3
+    },
+    {
+      "name": "ICEA Unit Trust Scheme",
+      "aum": 23218486496,
+      "marketShare": 2.7
+    },
+    {
+      "name": "KCB Unit Trust Scheme",
+      "aum": 22036219742,
+      "marketShare": 2.6
+    },
+    {
+      "name": "Etica Unit Trust Fund",
+      "aum": 20593548131,
+      "marketShare": 2.4
+    },
+    {
+      "name": "Ziidi Money Market Fund",
+      "aum": 18222742199,
+      "marketShare": 2.1
+    },
+    {
+      "name": "Madison Unit Trust Funds",
+      "aum": 17754720395,
+      "marketShare": 2.1
+    },
+    {
+      "name": "Faida Unit Trust Funds",
+      "aum": 15751137933,
+      "marketShare": 1.8
+    },
+    {
+      "name": "Nabo Africa Funds",
+      "aum": 13684079188,
+      "marketShare": 1.6
+    },
+    {
+      "name": "Arvocap Unit trust funds",
+      "aum": 11021681934,
+      "marketShare": 1.3
+    },
+    {
+      "name": "Dry Associates Unit Trust",
+      "aum": 8372776242,
+      "marketShare": 1
+    },
+    {
+      "name": "Stanbic Unit Trust Funds",
+      "aum": 5858136405,
+      "marketShare": 0.7
+    },
+    {
+      "name": "CPF Unit Trust Scheme",
+      "aum": 5677480339,
+      "marketShare": 0.7
+    },
+    {
+      "name": "Lofty Corban Unit Trust Scheme",
+      "aum": 5186749244,
+      "marketShare": 0.6
+    },
+    {
+      "name": "Zimele Unit Trust",
+      "aum": 4959765295,
+      "marketShare": 0.6
+    },
+    {
+      "name": "GenAfrica Unit Trust Scheme",
+      "aum": 4933376924,
+      "marketShare": 0.6
+    },
+    {
+      "name": "Kuza Unit Trust Scheme",
+      "aum": 4271074922,
+      "marketShare": 0.5
+    },
+    {
+      "name": "Mayfair Unit Trust Funds",
+      "aum": 3855747867,
+      "marketShare": 0.5
+    },
+    {
+      "name": "Apollo Unit Trust Scheme",
+      "aum": 3567140889,
+      "marketShare": 0.4
+    },
+    {
+      "name": "Cytonn UnitTrust Fund",
+      "aum": 3019771748,
+      "marketShare": 0.4
+    },
+    {
+      "name": "Mali Money Market Fund",
+      "aum": 2213054816,
+      "marketShare": 0.3
+    },
+    {
+      "name": "Enwealth Unit Trust",
+      "aum": 1990816548,
+      "marketShare": 0.2
+    },
+    {
+      "name": "African Alliance Kenya Unit Trust",
+      "aum": 1565077071,
+      "marketShare": 0.2
+    },
+    {
+      "name": "Gulfcap Unit Trust Funds",
+      "aum": 1399413523,
+      "marketShare": 0.2
+    },
+    {
+      "name": "Orient Unit Trust Scheme",
+      "aum": 585190642,
+      "marketShare": 0.07
+    },
+    {
+      "name": "Genghis Unit Trust Funds",
+      "aum": 583989697,
+      "marketShare": 0.07
+    },
+    {
+      "name": "Faulu Unit Trust Scheme",
+      "aum": 299449525,
+      "marketShare": 0.04
+    },
+    {
+      "name": "Taifa Unit Trust Scheme",
+      "aum": 295203601,
+      "marketShare": 0.03
+    },
+    {
+      "name": "VCG Offshore Opportunities Special Fund",
+      "aum": 115230166,
+      "marketShare": 0.01
+    },
+    {
+      "name": "Ziidi Shariah Money Market Fund",
+      "aum": 113919531,
+      "marketShare": 0.01
+    },
+    {
+      "name": "Equity Investment Bank",
+      "aum": 105262726,
+      "marketShare": 0.01
+    },
+    {
+      "name": "Kibaba Unit Trust Funds",
+      "aum": 46480216,
+      "marketShare": 0.01
+    },
+    {
+      "name": "XENO Unit Trust Funds",
+      "aum": 22542644,
+      "marketShare": 0.003
+    },
+    {
+      "name": "Amana Unit Trust Funds",
+      "aum": 21265300,
+      "marketShare": 0.002
+    },
+    {
+      "name": "Wanafunzi Fixed Income Fund",
+      "aum": 960311,
+      "marketShare": 0.0001
+    },
+    {
+      "name": "Jaza Unit Trust Fund",
+      "aum": 44106,
+      "marketShare": 0.00001
+    },
+    {
+      "name": "Faida Unit Trust Funds 15,751,137,933",
+      "aum": 9212518165,
+      "marketShare": 71
+    },
+    {
+      "name": "CPF Unit Trust Scheme 5,677,480,339",
+      "aum": 3366586965,
+      "marketShare": 69
+    },
+    {
+      "name": "Ziidi Shariah Money Market Fund 113,919,531",
+      "aum": 68226724,
+      "marketShare": 67
+    },
+    {
+      "name": "Gulfcap Unit Trust Funds 1,399,413,523",
+      "aum": 856325557,
+      "marketShare": 63
+    },
+    {
+      "name": "Jaza Unit Trust Fund 44,106",
+      "aum": 31550,
+      "marketShare": 40
+    },
+    {
+      "name": "Arvocap Unit trust funds 11,021,681,934",
+      "aum": 7945687728,
+      "marketShare": 39
+    },
+    {
+      "name": "Jubilee Unit Trust Scheme 26,914,858,646",
+      "aum": 21732595728,
+      "marketShare": 24
+    },
+    {
+      "name": "Standard Investment Trust Fund 153,153,595,139",
+      "aum": 125314716090,
+      "marketShare": 22
+    },
+    {
+      "name": "Ziidi Money Market Fund 18,222,742,199",
+      "aum": 15368017765,
+      "marketShare": 19
+    },
+    {
+      "name": "Etica Unit Trust Fund 20,593,548,131",
+      "aum": 17620359761,
+      "marketShare": 17
+    },
+    {
+      "name": "KCB Unit Trust Scheme 22,036,219,742",
+      "aum": 18904895898,
+      "marketShare": 17
+    },
+    {
+      "name": "Britam Unit Trust Scheme 61,857,396,056",
+      "aum": 53099994031,
+      "marketShare": 16
+    },
+    {
+      "name": "Kuza Unit Trust Scheme 4,271,074,922",
+      "aum": 3714585819,
+      "marketShare": 15
+    },
+    {
+      "name": "Zimele Unit Trust 4,959,765,295",
+      "aum": 4332174964,
+      "marketShare": 14
+    },
+    {
+      "name": "Enwealth Unit Trust 1,990,816,548",
+      "aum": 1739995609,
+      "marketShare": 14
+    },
+    {
+      "name": "Old Mutual Unit Trust Scheme 34,949,481,280",
+      "aum": 30608803720,
+      "marketShare": 14
+    },
+    {
+      "name": "Nabo Africa Funds 13,684,079,188",
+      "aum": 12000805860,
+      "marketShare": 14
+    },
+    {
+      "name": "Madison Unit Trust Funds 17,754,720,395",
+      "aum": 15902336429,
+      "marketShare": 12
+    },
+    {
+      "name": "Sanlam Unit Trust Scheme 161,017,593,553",
+      "aum": 144310234841,
+      "marketShare": 12
+    },
+    {
+      "name": "Lofty Corban Unit Trust Scheme 5,186,749,244",
+      "aum": 4672073159,
+      "marketShare": 11
+    },
+    {
+      "name": "Stanbic Unit Trust Funds 5,858,136,405",
+      "aum": 5294994790,
+      "marketShare": 11
+    },
+    {
+      "name": "Sanlam Unit Trust Scheme SanlamAllianz Money Market Fund",
+      "aum": 123360133699,
+      "marketShare": 27.9
+    },
+    {
+      "name": "CIC Unit Trust Scheme CIC Money Market Fund",
+      "aum": 75057623124,
+      "marketShare": 17
+    },
+    {
+      "name": "Old Mutual Unit Trust Scheme Old Mutual Money Market Fund",
+      "aum": 26763538501,
+      "marketShare": 6.1
+    },
+    {
+      "name": "Absa Unit Trust Funds ABSA Shilling Money Market Fund",
+      "aum": 24882322696,
+      "marketShare": 5.6
+    },
+    {
+      "name": "Coop Unit Trust Scheme Co-op Money Market Fund",
+      "aum": 21779633932,
+      "marketShare": 4.9
+    },
+    {
+      "name": "ICEA Unit Trust Scheme ICEA LION Money Market Fund",
+      "aum": 20442198427,
+      "marketShare": 4.6
+    },
+    {
+      "name": "KCB Unit Trust Scheme KCB Money Market Fund KES",
+      "aum": 19438901351,
+      "marketShare": 4.4
+    },
+    {
+      "name": "Ziidi Money Market Fund Ziidi Money Market Fund",
+      "aum": 18222742199,
+      "marketShare": 4.1
+    },
+    {
+      "name": "Britam Unit Trust Scheme Britam Money Market Fund",
+      "aum": 15496491614,
+      "marketShare": 3.5
+    },
+    {
+      "name": "Jubilee Unit Trust Scheme Jubilee Money Market Fund KES",
+      "aum": 12537231710,
+      "marketShare": 2.8
+    },
+    {
+      "name": "Etica Unit Trust Fund Etica Money Market Fund",
+      "aum": 12264663421,
+      "marketShare": 2.8
+    },
+    {
+      "name": "Nabo Africa Funds Nabo KES Money Market Fund",
+      "aum": 7091930198,
+      "marketShare": 1.6
+    },
+    {
+      "name": "Madison Unit Trust Funds Madison Money Market Fund",
+      "aum": 6049479845,
+      "marketShare": 1.4
+    },
+    {
+      "name": "CPF Unit Trust Scheme CPF Money Market Fund",
+      "aum": 5623871654,
+      "marketShare": 1.3
+    },
+    {
+      "name": "GenAfrica Unit Trust Scheme GenAfrica Money Market Fund",
+      "aum": 4695923929,
+      "marketShare": 1.1
+    },
+    {
+      "name": "Jubilee Unit Trust Scheme Jubilee Money Market Fund USD",
+      "aum": 4680824780,
+      "marketShare": 1.1
+    },
+    {
+      "name": "Lofty Corban Unit Trust Scheme Lofty Corban Money Market Fund",
+      "aum": 4404317660,
+      "marketShare": 1
+    },
+    {
+      "name": "Dry Associates Unit Trust Dry Associates Money Market Fund KES",
+      "aum": 4291505142,
+      "marketShare": 1
+    },
+    {
+      "name": "CIC Unit Trust Scheme CIC Dollar Money Market Fund",
+      "aum": 3815816998,
+      "marketShare": 0.9
+    },
+    {
+      "name": "Dry Associates Unit Trust Dry Associates Money Market Fund USD",
+      "aum": 3565176023,
+      "marketShare": 0.8
+    },
+    {
+      "name": "Apollo Unit Trust Scheme Apollo Money Market Fund",
+      "aum": 3555621623,
+      "marketShare": 0.8
+    },
+    {
+      "name": "Absa Unit Trust Funds ABSA Dollar Money Market Fund",
+      "aum": 2610600886,
+      "marketShare": 0.6
+    },
+    {
+      "name": "Kuza Unit Trust Scheme Kuza Money Market Fund KES",
+      "aum": 2382842960,
+      "marketShare": 0.5
+    },
+    {
+      "name": "Old Mutual Unit Trust Scheme Old Mutual Dollar Money Market Fund",
+      "aum": 2301771594,
+      "marketShare": 0.5
+    },
+    {
+      "name": "Mali Money Market Fund Mali Money Market Fund",
+      "aum": 2213054816,
+      "marketShare": 0.5
+    },
+    {
+      "name": "Cytonn UnitTrust Fund Cytonn Money Market Fund",
+      "aum": 2137965852,
+      "marketShare": 0.5
+    },
+    {
+      "name": "Stanbic Unit Trust Funds Stanbic Money Market Fund",
+      "aum": 2056385245,
+      "marketShare": 0.5
+    },
+    {
+      "name": "Enwealth Unit Trust Enwealth Money Market Fund",
+      "aum": 1752346363,
+      "marketShare": 0.4
+    },
+    {
+      "name": "KCB Unit Trust Scheme KCB Money Market Fund USD",
+      "aum": 1315956194,
+      "marketShare": 0.3
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Money Market Fund",
+      "aum": 1077450139,
+      "marketShare": 0.2
+    },
+    {
+      "name": "Gulfcap Unit Trust Funds GCIB Money Market Fund",
+      "aum": 785062286,
+      "marketShare": 0.2
+    },
+    {
+      "name": "Nabo Africa Funds Nabo Africa Money Market Fund",
+      "aum": 660156289,
+      "marketShare": 0.15
+    },
+    {
+      "name": "NCBA Unit Trust Scheme NCBA Money Market (KES) Fund",
+      "aum": 640822744,
+      "marketShare": 0.14
+    },
+    {
+      "name": "Genghis Unit Trust Funds Genghis Money Market Fund",
+      "aum": 571009566,
+      "marketShare": 0.13
+    },
+    {
+      "name": "Mayfair Unit Trust Funds Mayfair Money Market Fund",
+      "aum": 517994510,
+      "marketShare": 0.12
+    },
+    {
+      "name": "Orient Unit Trust Scheme Orient Kasha Money Market Fund",
+      "aum": 433761449,
+      "marketShare": 0.1
+    },
+    {
+      "name": "Etica Unit Trust Fund Etica Money Market Fund -USD",
+      "aum": 412418289,
+      "marketShare": 0.09
+    },
+    {
+      "name": "African Alliance Kenya Unit Trust Scheme AA Kenya Balanced Fund",
+      "aum": 364396145,
+      "marketShare": 0.08
+    },
+    {
+      "name": "Faulu Unit Trust Scheme Faulu Money Market Fund",
+      "aum": 299449525,
+      "marketShare": 0.07
+    },
+    {
+      "name": "Kuza Unit Trust Scheme Kuza Money Market Fund USD",
+      "aum": 279576983,
+      "marketShare": 0.06
+    },
+    {
+      "name": "Taifa Unit Trust Scheme Taifa Money Market Fund KES",
+      "aum": 263108701,
+      "marketShare": 0.06
+    },
+    {
+      "name": "Britam Unit Trust Scheme Britam USD Money Market Fund",
+      "aum": 206983942,
+      "marketShare": 0.05
+    },
+    {
+      "name": "Enwealth Unit Trust Enwealth Dollar Money Market Fund",
+      "aum": 190689243,
+      "marketShare": 0.04
+    },
+    {
+      "name": "NCBA Unit Trust Scheme NCBA Money Market (USD) Fund",
+      "aum": 132630580,
+      "marketShare": 0.03
+    },
+    {
+      "name": "Ziidi Shariah Money Market Fund Ziidi Money Market Fund",
+      "aum": 113919531,
+      "marketShare": 0.026
+    },
+    {
+      "name": "Equity Investment Bank EIB Money Market Fund",
+      "aum": 88650190,
+      "marketShare": 0.02
+    },
+    {
+      "name": "Cytonn UnitTrust Fund Cytonn Money Market Fund USD",
+      "aum": 45298018,
+      "marketShare": 0.01
+    },
+    {
+      "name": "Orient Unit Trust Scheme Orient Dollar Money Market Fund",
+      "aum": 38548530,
+      "marketShare": 0.009
+    },
+    {
+      "name": "CPF Unit Trust Scheme CPF USD Money Market Fund",
+      "aum": 32467072,
+      "marketShare": 0.007
+    },
+    {
+      "name": "Taifa Unit Trust Scheme Taifa Money Market Fund USD",
+      "aum": 32094900,
+      "marketShare": 0.007
+    },
+    {
+      "name": "Amana Unit Trust Funds Amana Money Market Fund",
+      "aum": 15408851,
+      "marketShare": 0.003
+    },
+    {
+      "name": "Genghis Unit Trust Funds GenCap Hela Money Market Fund",
+      "aum": 11052423,
+      "marketShare": 0.002
+    },
+    {
+      "name": "XENO Unit Trust Funds XENO Kenya Money Market Fund",
+      "aum": 5124269,
+      "marketShare": 0.001
+    },
+    {
+      "name": "Jaza Unit Trust Fund Jaza Unit Trust Fund",
+      "aum": 44106,
+      "marketShare": 0
+    },
+    {
+      "name": "NCBA Unit Trust Scheme NCBA Fixed Income Fund",
+      "aum": 42049934983,
+      "marketShare": 21.1
+    },
+    {
+      "name": "Sanlam Unit Trust Scheme SanlamAllianz USD Fixed Income Fund",
+      "aum": 36961514115,
+      "marketShare": 18.6
+    },
+    {
+      "name": "Britam Unit Trust Scheme Britam Bond Plus Fund",
+      "aum": 36851123252,
+      "marketShare": 18.5
+    },
+    {
+      "name": "CIC Unit Trust Scheme CIC Fixed Income Fund",
+      "aum": 23300762786,
+      "marketShare": 11.7
+    },
+    {
+      "name": "Jubilee Unit Trust Scheme Jubilee Fixed Income Fund KES",
+      "aum": 9696802156,
+      "marketShare": 4.9
+    },
+    {
+      "name": "NCBA Unit Trust Scheme NCBA Dollar Fixed Income Fund",
+      "aum": 6537725431,
+      "marketShare": 3.3
+    },
+    {
+      "name": "Nabo Africa Funds Nabo KES Fixed Income Fund",
+      "aum": 4984839666,
+      "marketShare": 2.5
+    },
+    {
+      "name": "Zimele Unit Trust Zimele Fixed Income Fund",
+      "aum": 4541455363,
+      "marketShare": 2.3
+    },
+    {
+      "name": "Etica Unit Trust Fund Etica Fixed Income Fund",
+      "aum": 4500127668,
+      "marketShare": 2.3
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Almasi FI Accumulation Fund",
+      "aum": 4390774293,
+      "marketShare": 2.2
+    },
+    {
+      "name": "Coop Unit Trust Scheme Co-op Bond Fund",
+      "aum": 3643413279,
+      "marketShare": 1.8
+    },
+    {
+      "name": "Mayfair Unit Trust Funds Mayfair Fixed Income Fund",
+      "aum": 3337753358,
+      "marketShare": 1.7
+    },
+    {
+      "name": "Madison Unit Trust Funds Madison Fixed Income Fund",
+      "aum": 2889019058,
+      "marketShare": 1.5
+    },
+    {
+      "name": "Stanbic Unit Trust Funds Stanbic Fixed Income Fund USD",
+      "aum": 2865989180,
+      "marketShare": 1.4
+    },
+    {
+      "name": "Britam Unit Trust Scheme Britam USD Fixed Income Fund",
+      "aum": 2162635769,
+      "marketShare": 1.1
+    },
+    {
+      "name": "ICEA Unit Trust Scheme ICEA LION Fixed Income Fund KES",
+      "aum": 2141846337,
+      "marketShare": 1.1
+    },
+    {
+      "name": "Absa Unit Trust Funds ABSA Bond Fund",
+      "aum": 1864491876,
+      "marketShare": 0.94
+    },
+    {
+      "name": "Stanbic Unit Trust Funds Stanbic Fixed Income Fund KES",
+      "aum": 935761980,
+      "marketShare": 0.47
+    },
+    {
+      "name": "Kuza Unit Trust Scheme Kuza Fixed Income Fund KES",
+      "aum": 833870764,
+      "marketShare": 0.42
+    },
+    {
+      "name": "Nabo Africa Funds Nabo Africa Fixed Income Fund",
+      "aum": 741331270,
+      "marketShare": 0.37
+    },
+    {
+      "name": "Gulfcap Unit Trust Funds GCIB Fixed Income Fund",
+      "aum": 593459913,
+      "marketShare": 0.3
+    },
+    {
+      "name": "KCB Unit Trust Scheme KCB Fixed Income Fund",
+      "aum": 507466412,
+      "marketShare": 0.26
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Ngao FI Distribution Fund",
+      "aum": 487651405,
+      "marketShare": 0.25
+    },
+    {
+      "name": "Sanlam Unit Trust Scheme SanlamAllianz Fixed Income Fund",
+      "aum": 451052946,
+      "marketShare": 0.23
+    },
+    {
+      "name": "ICEA Unit Trust Scheme ICEA LION Fixed Income Fund USD",
+      "aum": 424659113,
+      "marketShare": 0.21
+    },
+    {
+      "name": "Etica Unit Trust Fund Etica Fixed Income Fund - USD",
+      "aum": 377502606,
+      "marketShare": 0.19
+    },
+    {
+      "name": "African Alliance Kenya Unit Trust Scheme AA Kenya Equity Fund",
+      "aum": 258217605,
+      "marketShare": 0.13
+    },
+    {
+      "name": "Coop Unit Trust Scheme Co-op Fixed Income Gratuity Fund",
+      "aum": 141216347,
+      "marketShare": 0.07
+    },
+    {
+      "name": "Lofty Corban Unit Trust Scheme Lofty Corban Fixed Income Fund",
+      "aum": 113734835,
+      "marketShare": 0.057
+    },
+    {
+      "name": "Orient Unit Trust Scheme Orient Hifadhi Fixed Income Fund",
+      "aum": 112880662,
+      "marketShare": 0.057
+    },
+    {
+      "name": "CPF Unit Trust Scheme CPF Bond Fund",
+      "aum": 17814062,
+      "marketShare": 0.009
+    },
+    {
+      "name": "Old Mutual Unit Trust Scheme Old Mutual Bond Fund",
+      "aum": 15053865,
+      "marketShare": 0.0076
+    },
+    {
+      "name": "XENO Unit Trust Funds XENO Kenya Bond Fund",
+      "aum": 14359236,
+      "marketShare": 0.00722
+    },
+    {
+      "name": "Gulfcap Unit Trust Funds GCIB Shari'ah Fixed Income Fund",
+      "aum": 4075994,
+      "marketShare": 0.00205
+    },
+    {
+      "name": "Lofty Corban Unit Trust Scheme Lofty Corban Fixed Income Fund USD",
+      "aum": 1592214,
+      "marketShare": 0.0008
+    },
+    {
+      "name": "Wanafunzi Fixed Income Fund Wanafunzi Fixed Income Fund",
+      "aum": 960311,
+      "marketShare": 0.00048
+    },
+    {
+      "name": "Genghis Unit Trust Funds GenCap Hazina Bond Fund",
+      "aum": 609044,
+      "marketShare": 0.00031
+    },
+    {
+      "name": "Enwealth Unit Trust Enwealth Fixed Income Fund",
+      "aum": 354473,
+      "marketShare": 0.00018
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Thamani Equity Fund",
+      "aum": 2024972368,
+      "marketShare": 42.6
+    },
+    {
+      "name": "Old Mutual Unit Trust Scheme Old Mutual Equity Fund",
+      "aum": 975904542,
+      "marketShare": 20.5
+    },
+    {
+      "name": "NCBA Unit Trust Scheme NCBA Equity Fund",
+      "aum": 473195287,
+      "marketShare": 10
+    },
+    {
+      "name": "Britam Unit Trust Scheme Britam Equity Fund",
+      "aum": 365104497,
+      "marketShare": 7.7
+    },
+    {
+      "name": "CIC Unit Trust Scheme CIC Equity Fund",
+      "aum": 334502747,
+      "marketShare": 7
+    },
+    {
+      "name": "Nabo Africa Funds Nabo Equity Fund",
+      "aum": 204138870,
+      "marketShare": 4.3
+    },
+    {
+      "name": "African Alliance Kenya Unit Trust Scheme AA Kenya Fixed Income Fund",
+      "aum": 156483576,
+      "marketShare": 3.3
+    },
+    {
+      "name": "ICEA Unit Trust Scheme ICEA LION Equity Fund",
+      "aum": 119210249,
+      "marketShare": 2.5
+    },
+    {
+      "name": "Absa Unit Trust Funds ABSA Equity Fund",
+      "aum": 44756301,
+      "marketShare": 0.9
+    },
+    {
+      "name": "Lofty Corban Unit Trust Scheme Lofty Corban Equity Fund",
+      "aum": 27447241,
+      "marketShare": 0.6
+    },
+    {
+      "name": "Enwealth Unit Trust Enwealth Equity Fund",
+      "aum": 18393349,
+      "marketShare": 0.4
+    },
+    {
+      "name": "Amana Unit Trust Funds Amana Growth Fund",
+      "aum": 3772378,
+      "marketShare": 0.08
+    },
+    {
+      "name": "XENO Unit Trust Funds XENO Kenya East Africa Equity Fund",
+      "aum": 3059138,
+      "marketShare": 0.06
+    },
+    {
+      "name": "Genghis Unit Trust Funds GenCap Hisa Equities Fund",
+      "aum": 554902,
+      "marketShare": 0.012
+    },
+    {
+      "name": "Zimele Unit Trust Zimele Balanced Fund",
+      "aum": 418309932,
+      "marketShare": 19
+    },
+    {
+      "name": "Old Mutual Unit Trust Scheme Old Mutual Balanced Fund",
+      "aum": 310523615,
+      "marketShare": 14.1
+    },
+    {
+      "name": "Britam Unit Trust Scheme Britam Balanced Fund",
+      "aum": 249577532,
+      "marketShare": 11.3
+    },
+    {
+      "name": "CIC Unit Trust Scheme CIC Balanced Fund",
+      "aum": 233623982,
+      "marketShare": 10.6
+    },
+    {
+      "name": "Sanlam Unit Trust Scheme SanlamAllianz Balanced Fund",
+      "aum": 133498875,
+      "marketShare": 6.1
+    },
+    {
+      "name": "ICEA Unit Trust Scheme ICEA LION Balanced Fund",
+      "aum": 90572370,
+      "marketShare": 4.1
+    },
+    {
+      "name": "Absa Unit Trust Funds ABSA Balanced Fund",
+      "aum": 43415119,
+      "marketShare": 2
+    },
+    {
+      "name": "Equity Investment Bank EIB Balanced Fund",
+      "aum": 16612536,
+      "marketShare": 0.8
+    },
+    {
+      "name": "Apollo Unit Trust Scheme Apollo Balanced Fund",
+      "aum": 11519266,
+      "marketShare": 0.5
+    },
+    {
+      "name": "CPF Unit Trust Scheme CPF Balanced Fund",
+      "aum": 3327552,
+      "marketShare": 0.2
+    },
+    {
+      "name": "Amana Unit Trust Funds Amana Balanced Fund",
+      "aum": 2084070,
+      "marketShare": 0.09
+    },
+    {
+      "name": "Nabo Africa Funds Nabo Balanced Fund",
+      "aum": 1682894,
+      "marketShare": 0.08
+    },
+    {
+      "name": "Genghis Unit Trust Funds GenCap Eneza Diversified Fund",
+      "aum": 763763,
+      "marketShare": 0.03
+    },
+    {
+      "name": "Standard Investment Trust Fund Mansa-X Special Fund KES",
+      "aum": 132184482046,
+      "marketShare": 64.9
+    },
+    {
+      "name": "Standard Investment Trust Fund Mansa-X Special Fund USD",
+      "aum": 17433988227,
+      "marketShare": 8.6
+    },
+    {
+      "name": "Faida Unit Trust Funds Oak Multi Asset Special KES Fund",
+      "aum": 15467747745,
+      "marketShare": 7.6
+    },
+    {
+      "name": "Madison Unit Trust Funds Madison Wealth Special Fund",
+      "aum": 8816221493,
+      "marketShare": 4.3
+    },
+    {
+      "name": "Britam Unit Trust Scheme Britam Special Fund Fixed Income Fund",
+      "aum": 6525479449,
+      "marketShare": 3.2
+    },
+    {
+      "name": "Old Mutual Unit Trust Scheme Old Mutual Special Fixed Income",
+      "aum": 4582689163,
+      "marketShare": 2.3
+    },
+    {
+      "name": "Standard Investment Trust Fund Mansa-X Shariah Special fund KES",
+      "aum": 3007258334,
+      "marketShare": 1.5
+    },
+    {
+      "name": "Etica Unit Trust Fund Etica Special Fund Multi Asset Fund",
+      "aum": 1912266128,
+      "marketShare": 0.9
+    },
+    {
+      "name": "NCBA Unit Trust Scheme NCBA Global Fixed Income Special (USD) Fund",
+      "aum": 1891902276,
+      "marketShare": 0.9
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Multi Asset Strategy Special Fund",
+      "aum": 1591254919,
+      "marketShare": 0.8
+    },
+    {
+      "name": "NCBA Unit Trust Scheme NCBA Fixed Income Basket (KES) Fund",
+      "aum": 1084071397,
+      "marketShare": 0.5
+    },
+    {
+      "name": "Etica Unit Trust Fund Etica Special Fund Wealth Fund",
+      "aum": 1032128728,
+      "marketShare": 0.5
+    },
+    {
+      "name": "NCBA Unit Trust Scheme NCBA Global Equity Special (USD) Fund",
+      "aum": 944319643,
+      "marketShare": 0.5
+    },
+    {
+      "name": "Cytonn UnitTrust Fund Cytonn High Yield Special Fund",
+      "aum": 836507852,
+      "marketShare": 0.4
+    },
+    {
+      "name": "Kibaba Unit Trust Funds Kibaba Multi-Asset Special Fund (KES)",
+      "aum": 23178735,
+      "marketShare": 0
+    },
+    {
+      "name": "KCB Unit Trust Scheme KCB Wealth Special Fund",
+      "aum": 773895785,
+      "marketShare": 0.4
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Africa Equity Fund Special Fund",
+      "aum": 767840156,
+      "marketShare": 0.4
+    },
+    {
+      "name": "Kuza Unit Trust Scheme Kuza Momentum Special Fund",
+      "aum": 761422188,
+      "marketShare": 0.4
+    },
+    {
+      "name": "NCBA Unit Trust Scheme NCBA Fixed Income Basket (USD) Fund",
+      "aum": 539979375,
+      "marketShare": 0.3
+    },
+    {
+      "name": "Standard Investment Trust Fund Mansa-X Shariah Special fund USD",
+      "aum": 527866532,
+      "marketShare": 0.3
+    },
+    {
+      "name": "Dry Associates Unit Trust Dry Associates Special Fund High Yield Fund KES",
+      "aum": 516095078,
+      "marketShare": 0.3
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Global Equity Fund Special Fund",
+      "aum": 444112803,
+      "marketShare": 0.2
+    },
+    {
+      "name": "Lofty Corban Unit Trust Scheme Lofty Corban Private Debt Special Fund",
+      "aum": 423876649,
+      "marketShare": 0.2
+    },
+    {
+      "name": "Faida Unit Trust Funds Oak Multi Asset Special USD Fund",
+      "aum": 283390188,
+      "marketShare": 0.1
+    },
+    {
+      "name": "CIC Unit Trust Scheme CIC Wealth Special Fund",
+      "aum": 237163812,
+      "marketShare": 0.1
+    },
+    {
+      "name": "CIC Unit Trust Scheme CIC Global Balanced Fund Special Fund",
+      "aum": 189123695,
+      "marketShare": 0.1
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Eurofix Fi Special Fund",
+      "aum": 186910769,
+      "marketShare": 0.1
+    },
+    {
+      "name": "African Alliance Kenya Unit Trust Scheme AA Kenya Special Fund",
+      "aum": 130211187,
+      "marketShare": 0.1
+    },
+    {
+      "name": "VCG Offshore Opportunities Special Fund VCG Offshore Fixed Income Special Fund (USD)",
+      "aum": 115230166,
+      "marketShare": 0.1
+    },
+    {
+      "name": "Sanlam Unit Trust Scheme SanlamAllianz Special Sterling Fixed Income Fund",
+      "aum": 111393919,
+      "marketShare": 0.1
+    },
+    {
+      "name": "Etica Unit Trust Fund Etica Special Fund Shariah Fund",
+      "aum": 79698856,
+      "marketShare": 0
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Mabruk Sharia Special Fund",
+      "aum": 44568909,
+      "marketShare": 0
+    },
+    {
+      "name": "Lofty Corban Unit Trust Scheme Lofty Corban Global Assets Special Fund",
+      "aum": 24804364,
+      "marketShare": 0.01
+    },
+    {
+      "name": "Kibaba Unit Trust Funds Kibaba Multi-Asset Special Fund (USD)",
+      "aum": 23301481,
+      "marketShare": 0.01
+    },
+    {
+      "name": "Gulfcap Unit Trust Funds GCIB Shariah Multi Asset Special Fund",
+      "aum": 16815330,
+      "marketShare": 0.008
+    },
+    {
+      "name": "Etica Unit Trust Fund Etica Special Shariah Fund -USD",
+      "aum": 14742434,
+      "marketShare": 0.007
+    },
+    {
+      "name": "Kuza Unit Trust Scheme Kuza Shariah Momentum Special Fund",
+      "aum": 13362028,
+      "marketShare": 0.007
+    },
+    {
+      "name": "Arvocap Unit trust funds Arvocap Global Sharia Special Fund",
+      "aum": 6146174,
+      "marketShare": 0.003
+    }
+  ],
+  "fund_aum": [],
+  "composition": [],
+  "stats": {
+    "comp_ok": 0,
+    "comp_review": 0
+  }
+}

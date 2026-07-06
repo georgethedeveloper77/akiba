@@ -1,0 +1,28 @@
+{
+  "period": "2026-03-31",
+  "source": "CMA CIS Quarterly Report Q1-2026",
+  "source_url": "https://www.cma.or.ke",
+  "total_aum_kes": 851708510285,
+  "investors": 3616086,
+
+  "_comment_fund_type": "Table 10 — authoritative per-type market AUM. Sums to total_aum_kes exactly. Use for the Markets 'by fund type' donut (true market split, all types).",
+  "aum_by_fund_type": [
+    { "type": "mmf",          "label": "Money Market", "aum_kes": 442199966997, "share_pct": 51.9 },
+    { "type": "special",      "label": "Special",      "aum_kes": 203565448012, "share_pct": 23.9 },
+    { "type": "fixed_income", "label": "Fixed Income", "aum_kes": 198991286618, "share_pct": 23.4 },
+    { "type": "equity",       "label": "Equity",       "aum_kes": 4751495471,   "share_pct": 0.6 },
+    { "type": "balanced",     "label": "Balanced",     "aum_kes": 2200313187,   "share_pct": 0.3 }
+  ],
+
+  "_comment_asset_class": "Table 9 — where the whole CIS market invests. Sums to total. Use for a new 'where the market invests' context donut (8 classes = the same keys as per-fund composition).",
+  "market_asset_classes": [
+    { "key": "gok",            "label": "GoK securities",   "aum_kes": 374593461269, "share_pct": 44.0 },
+    { "key": "fixed_deposits", "label": "Fixed deposits",   "aum_kes": 200204645703, "share_pct": 23.5 },
+    { "key": "cash",           "label": "Cash & demand",    "aum_kes": 120217712388, "share_pct": 14.1 },
+    { "key": "unlisted",       "label": "Unlisted sec.",    "aum_kes": 74623323923,  "share_pct": 8.8 },
+    { "key": "listed",         "label": "Listed sec.",      "aum_kes": 59204697507,  "share_pct": 7.0 },
+    { "key": "offshore",       "label": "Off-shore",        "aum_kes": 16597362538,  "share_pct": 1.9 },
+    { "key": "other_cis",      "label": "Other CIS",        "aum_kes": 3362087547,   "share_pct": 0.4 },
+    { "key": "alternative",    "label": "Alternative",      "aum_kes": 2905219412,   "share_pct": 0.3 }
+  ]
+}

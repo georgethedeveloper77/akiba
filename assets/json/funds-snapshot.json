@@ -1,0 +1,24 @@
+{
+  "as_of": "2026-07-02",
+  "funds": [
+    { "id": "cic-mmf-kes", "name": "CIC Money Market Fund", "manager": "CIC Asset Management", "category": "mmf_kes", "currency": "KES", "current_rate": 9.0, "tax_free": false },
+    { "id": "etica-mmf-kes", "name": "Etica Money Market Fund", "manager": "Etica Capital", "category": "mmf_kes", "currency": "KES", "current_rate": 12.0, "tax_free": false },
+    { "id": "cytonn-mmf-kes", "name": "Cytonn Money Market Fund", "manager": "Cytonn Asset Managers", "category": "mmf_kes", "currency": "KES", "current_rate": 11.5, "tax_free": false },
+    { "id": "sanlam-mmf-kes", "name": "Sanlam Money Market Fund", "manager": "Sanlam Investments East Africa", "category": "mmf_kes", "currency": "KES", "current_rate": 10.0, "tax_free": false },
+    { "id": "oldmutual-mmf-kes", "name": "Old Mutual Money Market Fund", "manager": "Old Mutual Investment Group", "category": "mmf_kes", "currency": "KES", "current_rate": 9.5, "tax_free": false },
+    { "id": "britam-mmf-kes", "name": "Britam Money Market Fund", "manager": "Britam Asset Managers", "category": "mmf_kes", "currency": "KES", "current_rate": 9.8, "tax_free": false },
+    { "id": "icealion-mmf-kes", "name": "ICEA Lion Money Market Fund", "manager": "ICEA Lion Asset Management", "category": "mmf_kes", "currency": "KES", "current_rate": 9.7, "tax_free": false },
+    { "id": "ncba-mmf-kes", "name": "NCBA Money Market Fund", "manager": "NCBA Investment Bank", "category": "mmf_kes", "currency": "KES", "current_rate": 9.6, "tax_free": false },
+    { "id": "madison-mmf-kes", "name": "Madison Money Market Fund", "manager": "Madison Investment Managers", "category": "mmf_kes", "currency": "KES", "current_rate": 10.2, "tax_free": false },
+    { "id": "zimele-mmf-kes", "name": "Zimele Money Market Fund", "manager": "Zimele Asset Management", "category": "mmf_kes", "currency": "KES", "current_rate": 9.4, "tax_free": false },
+    { "id": "coop-mmf-kes", "name": "Co-op Money Market Fund", "manager": "Co-op Trust Investment Services", "category": "mmf_kes", "currency": "KES", "current_rate": 9.3, "tax_free": false },
+    { "id": "kuza-mmf-kes", "name": "Kuza Money Market Fund", "manager": "Kuza Asset Management", "category": "mmf_kes", "currency": "KES", "current_rate": 11.0, "tax_free": false },
+    { "id": "cytonn-mmf-usd", "name": "Cytonn USD Money Market Fund", "manager": "Cytonn Asset Managers", "category": "mmf_usd", "currency": "USD", "current_rate": 5.0, "tax_free": false },
+    { "id": "etica-mmf-usd", "name": "Etica USD Money Market Fund", "manager": "Etica Capital", "category": "mmf_usd", "currency": "USD", "current_rate": 5.2, "tax_free": false },
+    { "id": "sanlam-mmf-usd", "name": "Sanlam USD Money Market Fund", "manager": "Sanlam Investments East Africa", "category": "mmf_usd", "currency": "USD", "current_rate": 4.8, "tax_free": false },
+    { "id": "cbk-tbill-91", "name": "91-Day Treasury Bill", "manager": "Central Bank of Kenya", "category": "tbill", "currency": "KES", "current_rate": 8.5, "tax_free": false },
+    { "id": "cbk-ifb-latest", "name": "Infrastructure Bond (latest)", "manager": "Central Bank of Kenya", "category": "bond", "currency": "KES", "current_rate": 13.5, "tax_free": true },
+    { "id": "stima-sacco", "name": "Stima SACCO Deposits", "manager": "Stima SACCO", "category": "sacco", "currency": "KES", "current_rate": 11.0, "tax_free": false },
+    { "id": "safaricom-nse", "name": "Safaricom PLC", "manager": "Nairobi Securities Exchange", "category": "stock", "currency": "KES", "current_rate": 5.5, "tax_free": false }
+  ]
+}

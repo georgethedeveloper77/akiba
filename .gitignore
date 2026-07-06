@@ -1,0 +1,86 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# =========================
+# Akiba Admin - Next.js
+# =========================
+
+# dependencies
+akiba-admin/node_modules/
+
+# local env files - DO NOT COMMIT
+akiba-admin/.env
+akiba-admin/.env.local
+akiba-admin/.env.development.local
+akiba-admin/.env.test.local
+akiba-admin/.env.production.local
+
+# keep example env file
+!akiba-admin/.env.example
+
+# Next.js build/cache
+akiba-admin/.next/
+akiba-admin/out/
+akiba-admin/.vercel/
+
+# logs
+akiba-admin/npm-debug.log*
+akiba-admin/yarn-debug.log*
+akiba-admin/pnpm-debug.log*
+akiba-admin/bun-debug.log*
+
+# TypeScript cache
+akiba-admin/*.tsbuildinfo
+
+# OS/editor
+akiba-admin/.DS_Store
+akiba-admin/.idea/
+akiba-admin/.vscode/
+
+akiba-14e48-firebase-adminsdk-fbsvc-27efda1c8c.json
+
+sensitive.md
+akiba-admin/sensitive.md

@@ -1,0 +1,28 @@
+name: scrape-cbk
+
+on:
+  schedule:
+    # T-bill results post Thursday. Run Thu 14:00 UTC (17:00 EAT), after they're up.
+    - cron: "0 14 * * 4"
+  workflow_dispatch: {}   # adds a manual "Run workflow" button
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install deps + browser
+        working-directory: scrapers
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+      - name: Scrape CBK T-bills
+        working-directory: scrapers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: node cbk-tbills.mjs
