@@ -53,6 +53,31 @@ export async function updateCompany(formData: FormData) {
   refresh();
 }
 
+export async function updateContact(formData: FormData) {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) throw new Error("updateContact: missing company id");
+
+  // Only fields this form carries — never brand_color/logo_url (those live in
+  // setBrandColor/uploadCompanyLogo; touching them here nulls them on Save).
+  const patch = {
+    website: strOrNull(formData.get("website")),
+    phone: strOrNull(formData.get("phone")),
+    whatsapp: strOrNull(formData.get("whatsapp")),
+    email: strOrNull(formData.get("email")),
+  };
+
+  const { error } = await supabaseAdmin()
+    .from("companies")
+    .update(patch)
+    .eq("id", id);
+
+  if (error) throw new Error(`updateContact: ${error.message}`);
+
+  revalidatePath(`/admin/companies/${id}`);
+  revalidatePath("/admin/companies");
+  await republishSnapshot();
+}
+
 // Governance / custody chain (trustee · custodian · auditor). Manager-level
 // trust signals that ride in the snapshot (0026) and surface on the app's fund
 // detail page. Separate writer from updateCompany so a table edit that omits
