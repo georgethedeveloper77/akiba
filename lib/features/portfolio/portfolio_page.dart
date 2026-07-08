@@ -1,4 +1,3 @@
-import '../../data/snapshot_providers.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +12,7 @@ import '../../core/widgets/kit.dart';
 import '../../data/models/fund.dart';
 import '../../data/models/holding.dart';
 import '../../data/providers.dart';
+import '../../data/snapshot_providers.dart';
 import '../../engine/accrual_engine.dart';
 import '../../engine/portfolio_math.dart';
 import 'add_holding_page.dart';
@@ -286,12 +286,16 @@ class _Full extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text('earned since you added',
-                        style: TextStyle(color: c.muted, fontSize: 11)),
+                    Text(
+                      'earned since you added',
+                      style: TextStyle(color: c.muted, fontSize: 11),
+                    ),
                   ],
                 )
-              : Text('Tracking your earnings from today',
-                  style: TextStyle(color: c.muted, fontSize: 11.5)),
+              : Text(
+                  'Tracking your earnings from today',
+                  style: TextStyle(color: c.muted, fontSize: 11.5),
+                ),
         ),
 
         if (fxMissing)
@@ -389,39 +393,42 @@ class _TrendChart extends StatelessWidget {
     final lo = data.reduce((a, b) => a < b ? a : b);
     final hi = data.reduce((a, b) => a > b ? a : b);
     final span = (hi - lo).abs() < 1e-6 ? 1.0 : (hi - lo);
-    return LineChart(LineChartData(
-      minX: 0,
-      maxX: (data.length - 1).toDouble(),
-      minY: lo - span * 0.08,
-      maxY: hi + span * 0.08,
-      gridData: const FlGridData(show: false),
-      titlesData: const FlTitlesData(show: false),
-      borderData: FlBorderData(show: false),
-      lineTouchData: const LineTouchData(enabled: false),
-      lineBarsData: [
-        LineChartBarData(
-          spots: [
-            for (var i = 0; i < data.length; i++) FlSpot(i.toDouble(), data[i]),
-          ],
-          isCurved: true,
-          curveSmoothness: 0.28,
-          color: color,
-          barWidth: 2,
-          dotData: const FlDotData(show: false),
-          belowBarData: BarAreaData(
-            show: true,
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                color.withValues(alpha: 0.20),
-                color.withValues(alpha: 0.0),
-              ],
+    return LineChart(
+      LineChartData(
+        minX: 0,
+        maxX: (data.length - 1).toDouble(),
+        minY: lo - span * 0.08,
+        maxY: hi + span * 0.08,
+        gridData: const FlGridData(show: false),
+        titlesData: const FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        lineTouchData: const LineTouchData(enabled: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: [
+              for (var i = 0; i < data.length; i++)
+                FlSpot(i.toDouble(), data[i]),
+            ],
+            isCurved: true,
+            curveSmoothness: 0.28,
+            color: color,
+            barWidth: 2,
+            dotData: const FlDotData(show: false),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  color.withValues(alpha: 0.20),
+                  color.withValues(alpha: 0.0),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ));
+        ],
+      ),
+    );
   }
 }
 
@@ -440,8 +447,18 @@ class _HoldingRow extends ConsumerWidget {
   final bool hidden;
 
   static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   @override
@@ -451,11 +468,11 @@ class _HoldingRow extends ConsumerWidget {
     final name = f?.name ?? holding.fundId;
     final rate = f?.currentRate;
     final ccy = holding.currency;
-    final brand = ref.watch(brandColorProvider(holding.fundId)) ??
+    final brand =
+        ref.watch(brandColorProvider(holding.fundId)) ??
         fundTypeColor(f?.fundType);
     final logoUrl = ref.watch(logoUrlProvider(holding.fundId));
-    final since =
-        '${_months[value.firstLot.month - 1]} ${value.firstLot.day}';
+    final since = '${_months[value.firstLot.month - 1]} ${value.firstLot.day}';
 
     final valNative = ccy == 'USD'
         ? '\$${value.valueNative.toStringAsFixed(2)}'
@@ -492,11 +509,12 @@ class _HoldingRow extends ConsumerWidget {
               ),
             ),
             FundLogo(
-                domain: f?.logoDomain,
-                logoUrl: logoUrl,
-                brandColor: brand,
-                seed: f?.manager ?? name,
-                size: 40),
+              domain: f?.logoDomain,
+              logoUrl: logoUrl,
+              brandColor: brand,
+              seed: f?.manager ?? name,
+              size: 40,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -675,8 +693,8 @@ class _Empty extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Add what you already hold and fructa shows your real balance, daily '
-          'earnings and projections \u2014 all in one place.',
+          'Add what you already hold and Fructa shows your real balance, daily '
+          'earnings and projections all in one place.',
           textAlign: TextAlign.center,
           style: TextStyle(color: c.muted, fontSize: 14, height: 1.5),
         ),

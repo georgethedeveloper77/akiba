@@ -15,6 +15,11 @@ class Company {
   final Color? brandColor;
   final String? logoUrl;
   final String? website;
+  // Contact channels (migrations 0028/0029) — surfaced on the fund detail
+  // Contact/CTA fallbacks. Nullable; a channel with no value stays hidden.
+  final String? phone;
+  final String? whatsapp;
+  final String? email;
   final double? aumKes; // scheme AUM, CMA Table 1 (0017)
   final double? marketShare; // % of total CIS AUM (0017)
   final String? aumAsOf; // YYYY-MM-DD quarter end
@@ -32,6 +37,9 @@ class Company {
     this.brandColor,
     this.logoUrl,
     this.website,
+    this.phone,
+    this.whatsapp,
+    this.email,
     this.aumKes,
     this.marketShare,
     this.aumAsOf,
@@ -47,6 +55,9 @@ class Company {
     brandColor: parseHexColor(j['brand_color'] as String?),
     logoUrl: j['logo_url'] as String?,
     website: j['website'] as String?,
+    phone: j['phone'] as String?,
+    whatsapp: j['whatsapp'] as String?,
+    email: j['email'] as String?,
     aumKes: (j['aum_kes'] as num?)?.toDouble(),
     marketShare: (j['market_share'] as num?)?.toDouble(),
     aumAsOf: j['aum_as_of'] as String?,

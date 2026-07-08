@@ -26,6 +26,13 @@ class Push {
     });
   }
 
+  /// Raise the OS notification-permission prompt (the system dialog). Safe to
+  /// call more than once — the OS only shows it once, then this reflects the
+  /// current grant. Used by onboarding and the first-open follow coach. Returns
+  /// whether notifications are permitted.
+  static Future<bool> promptPermission() =>
+      OneSignal.Notifications.requestPermission(true);
+
   /// Master switch: opts the device's push subscription in/out at OneSignal,
   /// so "All alerts off" actually stops delivery (the pref alone doesn't).
   static void setEnabled(bool on) {

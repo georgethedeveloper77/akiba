@@ -121,6 +121,37 @@ class fructaColors extends ThemeExtension<fructaColors> {
   Color delta(num v) => v > 0 ? up : (v < 0 ? down : muted);
   Color deltaSoft(num v) => v > 0 ? upSoft : (v < 0 ? downSoft : line);
 
+  /// Legible ink (near-black or white) for text/icons placed on top of a filled
+  /// [brand] surface — chosen by the brand's own luminance, using the same
+  /// ~0.45 split the accent palette uses (gold/amber take dark ink, mid-tones
+  /// take white). So brand-coloured buttons keep readable labels whatever the
+  /// manager's colour.
+  Color inkOn(Color brand) =>
+      brand.computeLuminance() > 0.45 ? const Color(0xFF15130C) : Colors.white;
+
+  /// A brand/data colour made legible as a line, dot or bar fill against [bg].
+  /// Some manager brand colours are near-black navies/greens that disappear on
+  /// the dark canvas; this raises HSL lightness (dark) or deepens it (light),
+  /// keeping hue + saturation, until the stroke clears a minimum contrast ratio
+  /// against the background. A colour that already reads is returned unchanged,
+  /// so gold/sky/emerald etc. are untouched. Use for data strokes only — the
+  /// logo avatar and ambient glow should keep the true brand colour.
+  Color brandOnBg(Color brand, {double minContrast = 3.0}) {
+    if (_contrastRatio(brand, bg) >= minContrast) return brand;
+    var hsl = HSLColor.fromColor(brand);
+    var out = brand;
+    for (var i = 0; i < 24; i++) {
+      final next = isDark
+          ? (hsl.lightness + 0.035).clamp(0.0, 0.82)
+          : (hsl.lightness - 0.035).clamp(0.14, 1.0);
+      if (next == hsl.lightness) break;
+      hsl = hsl.withLightness(next);
+      out = hsl.toColor();
+      if (_contrastRatio(out, bg) >= minContrast) break;
+    }
+    return out;
+  }
+
   // ── Dark  ported verbatim from v5 :root ────────────────────────────────
   factory fructaColors.dark(fructaAccent a) => fructaColors(
     brightness: Brightness.dark,
@@ -242,6 +273,15 @@ class fructaColors extends ThemeExtension<fructaColors> {
       accentInk: c(accentInk, other.accentInk),
     );
   }
+}
+
+/// WCAG relative-luminance contrast ratio between two colours (1.0 … 21.0).
+double _contrastRatio(Color a, Color b) {
+  final la = a.computeLuminance();
+  final lb = b.computeLuminance();
+  final hi = la > lb ? la : lb;
+  final lo = la > lb ? lb : la;
+  return (hi + 0.05) / (lo + 0.05);
 }
 
 // ─────────────────────────────────────────────────────────────────────────

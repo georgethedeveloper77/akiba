@@ -19,16 +19,24 @@ class CtaFull extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.icon,
+    this.tint,
   });
 
   final String label;
   final VoidCallback onTap;
   final IconData? icon;
 
+  /// Optional brand colour. When set, the button fills with [tint] and its
+  /// label/icon ink is chosen for legibility on that fill. Defaults to the v5
+  /// `c.text` fill / `c.bg` ink.
+  final Color? tint;
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final text = icon == null ? label : _labelForIcon(label);
+    final bg = tint ?? c.text;
+    final fg = tint != null ? c.inkOn(tint!) : c.bg;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
       child: SizedBox(
@@ -36,8 +44,8 @@ class CtaFull extends StatelessWidget {
         child: TextButton(
           onPressed: onTap,
           style: TextButton.styleFrom(
-            backgroundColor: c.text,
-            foregroundColor: c.bg,
+            backgroundColor: bg,
+            foregroundColor: fg,
             padding: const EdgeInsets.symmetric(vertical: 15),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -71,16 +79,23 @@ class CtaGhost extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.icon,
+    this.tint,
   });
 
   final String label;
   final VoidCallback onTap;
   final IconData? icon;
 
+  /// Optional brand colour. When set, the label/icon take [tint] and the border
+  /// a softened [tint]. Defaults to the v5 muted text / `line2` border.
+  final Color? tint;
+
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final text = icon == null ? label : _labelForIcon(label);
+    final fg = tint ?? c.muted;
+    final border = tint != null ? tint!.withValues(alpha: 0.55) : c.line2;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 9, 16, 0),
       child: SizedBox(
@@ -89,9 +104,9 @@ class CtaGhost extends StatelessWidget {
           onPressed: onTap,
           style: TextButton.styleFrom(
             backgroundColor: Colors.transparent,
-            foregroundColor: c.muted,
+            foregroundColor: fg,
             padding: const EdgeInsets.symmetric(vertical: 13),
-            side: BorderSide(color: c.line2),
+            side: BorderSide(color: border),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),

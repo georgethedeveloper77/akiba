@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/categories.dart';
@@ -8,9 +9,11 @@ import '../../core/category_colors.dart';
 import '../../core/format.dart';
 import '../../core/i18n.dart';
 import '../../core/insights/signal_engine.dart';
+import '../../core/push.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/kit.dart';
 import '../../data/models/agent.dart';
+import '../../data/models/company.dart';
 import '../../data/models/fund.dart';
 import '../../data/models/fund_composition.dart';
 import '../../data/models/holding.dart';
@@ -65,9 +68,132 @@ String _quarter(String asOf) {
 /// manager CIS · credentials · composition · peers · terms) over a brand-tinted
 /// ambient glow, matched to the mockup, with the kit-based position/signals/
 /// agents/CTAs preserved.
-class CompanyPage extends ConsumerWidget {
+class CompanyPage extends ConsumerStatefulWidget {
   const CompanyPage(this.fund, {super.key});
   final Fund fund;
+
+  @override
+  ConsumerState<CompanyPage> createState() => _CompanyPageState();
+}
+
+class _CompanyPageState extends ConsumerState<CompanyPage> {
+  // One-shot key (shared 'settings' box): the notification coach shows on the
+  // first fund detail ever opened, then never again.
+  static const _coachKey = 'coach_notif_seen';
+
+  Fund get fund => widget.fund;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCoach());
+  }
+
+  // First fund detail opened → a one-time nudge to enable rate alerts. Marks
+  // itself seen before showing, so a swipe-dismiss can't make it reappear.
+  Future<void> _maybeCoach() async {
+    if (!mounted) return;
+    final box = Hive.box('settings');
+    if (box.get(_coachKey, defaultValue: false) as bool) return;
+    await box.put(_coachKey, true);
+    if (!mounted) return;
+    await _showNotifCoach();
+  }
+
+  // Follow this fund (add-only), opt the device into push, and raise the OS
+  // permission prompt — the same path Settings/onboarding use.
+  Future<void> _enableNotifs() async {
+    await ref.read(subscriptionsProvider.notifier).ensureFollow(fund.id);
+    Push.setEnabled(true);
+    await Push.promptPermission();
+  }
+
+  Future<void> _showNotifCoach() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetCtx) {
+        final c = sheetCtx.c;
+        // Same contrast-safe brand tint the detail page uses, so the sheet
+        // matches the fund's colour.
+        final raw = ref.read(brandColorProvider(fund.id)) ??
+            categoryColor(fund.category);
+        final tint = c.brandOnBg(raw);
+        return SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.fromLTRB(0, 10, 0, 18),
+                  decoration: BoxDecoration(
+                    color: c.line2,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.notifications_active_outlined,
+                            size: 20, color: tint),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Stay on top of this fund',
+                            style: TextStyle(
+                                color: c.text,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Turn on notifications and fructa will alert you when this '
+                      'fund\u2019s rate moves. You can manage alerts anytime in '
+                      'Settings.',
+                      style: TextStyle(
+                          color: c.muted, fontSize: 13.5, height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              CtaFull(
+                icon: Icons.notifications_active,
+                label: 'Turn on notifications',
+                tint: tint,
+                onTap: () async {
+                  Navigator.of(sheetCtx).pop();
+                  await _enableNotifs();
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Alerts on for this fund.')),
+                  );
+                },
+              ),
+              CtaGhost(
+                icon: Icons.close,
+                label: 'Not now',
+                onTap: () => Navigator.of(sheetCtx).pop(),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Future<void> _open(String? url) async {
     if (url == null) return;
@@ -85,24 +211,52 @@ class CompanyPage extends ConsumerWidget {
     return null;
   }
 
-  /// First reachable agent as a launch URL — WhatsApp when the agent takes it,
-  /// otherwise a dialer link. Null when no agent has a usable number, so the
-  /// Contact CTA hides rather than dangling. Mirrors the per-agent row logic.
-  String? _contactUrl(List<Agent> agents) {
+  /// Contact launch URL for the Contact CTA. Prefers a WhatsApp open-link
+  /// whenever a WhatsApp number exists (agent first, then the manager company),
+  /// otherwise the phone dialer (agent first, then company). Contact is a
+  /// person-to-person channel, so email / the fund's own link are only a last
+  /// resort. Null when the fund has none of these, so the CTA hides rather than
+  /// dangling.
+  String? _bestContact(List<Agent> agents, Company? m) {
+    String digitsOf(String? s) => (s ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+
+    // 1. WhatsApp open-link — agent, then company.
     for (final a in agents) {
-      final digits = (a.phone ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-      if (a.whatsapp && digits.isNotEmpty) return 'https://wa.me/$digits';
+      final d = digitsOf(a.phone);
+      if (a.whatsapp && d.isNotEmpty) return 'https://wa.me/$d';
+    }
+    final cwa = digitsOf(m?.whatsapp);
+    if (cwa.isNotEmpty) return 'https://wa.me/$cwa';
+
+    // 2. Phone dialer — agent, then company.
+    for (final a in agents) {
       if (a.phone != null && a.phone!.isNotEmpty) return 'tel:${a.phone}';
     }
-    return null;
+    if (m?.phone != null && m!.phone!.isNotEmpty) return 'tel:${m.phone}';
+
+    // 3. Last resorts.
+    final email = m?.email;
+    if (email != null && email.isNotEmpty) return 'mailto:$email';
+    return fund.contactUrl;
+  }
+
+  /// Icon that honestly reflects the channel a resolved contact URL opens.
+  IconData _contactIcon(String url) {
+    if (url.startsWith('tel:')) return Icons.call;
+    if (url.startsWith('mailto:')) return Icons.mail_outline;
+    return Icons.chat_bubble_outline; // wa.me / other message link
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final c = context.c;
     final cfg = ref.watch(remoteConfigProvider);
-    final tint =
+    final rawTint =
         ref.watch(brandColorProvider(fund.id)) ?? categoryColor(fund.category);
+    // Lift near-black manager brand colours so the rate line, peer bars and
+    // performance dots stay visible on the dark canvas. The logo avatar and the
+    // ambient glow below keep the true brand colour (rawTint).
+    final tint = c.brandOnBg(rawTint);
     final logoUrl = ref.watch(logoUrlProvider(fund.id));
     final peers = ref.watch(ratesProvider).valueOrNull ?? const <Fund>[];
     final held = _heldIn(ref.watch(holdingsProvider));
@@ -187,6 +341,13 @@ class CompanyPage extends ConsumerWidget {
       if (i >= 0) managerRank = i + 1;
     }
 
+    // Action URLs. When the fund itself carries no link, fall back to the
+    // manager company's own channels (website/phone/whatsapp/email entered in
+    // admin) so the top-up / official-site / contact CTAs still appear.
+    final topUpUrl = invest ?? manager?.website;
+    final officialSite = fund.siteUrl ?? manager?.website;
+    final contactUrl = _bestContact(agents, manager);
+
     return Scaffold(
       backgroundColor: c.bg,
       appBar: AppBar(
@@ -213,14 +374,11 @@ class CompanyPage extends ConsumerWidget {
                 MaterialPageRoute(builder: (_) => const AlertsPage())),
             icon: Icon(Icons.notifications_none, color: c.muted),
           ),
-          IconButton(
-            tooltip: following ? t('company.following') : t('company.follow'),
-            onPressed: () =>
+          _FollowStar(
+            following: following,
+            tint: tint,
+            onToggle: () =>
                 ref.read(subscriptionsProvider.notifier).toggle(fund.id),
-            icon: Icon(
-              following ? Icons.star : Icons.star_border,
-              color: following ? c.accent : c.muted,
-            ),
           ),
         ],
       ),
@@ -238,7 +396,10 @@ class CompanyPage extends ConsumerWidget {
                   gradient: RadialGradient(
                     center: const Alignment(0.2, -0.3),
                     radius: 0.85,
-                    colors: [tint.withValues(alpha: 0.20), Colors.transparent],
+                    colors: [
+                      rawTint.withValues(alpha: 0.20),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
               ),
@@ -257,7 +418,7 @@ class CompanyPage extends ConsumerWidget {
                         logoUrl: logoUrl,
                         seed: fund.manager,
                         size: 46,
-                        brandColor: tint),
+                        brandColor: rawTint),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -475,21 +636,24 @@ class CompanyPage extends ConsumerWidget {
               ],
 
               // ── CTAs ───────────────────────────────────────────────────
-              if (invest != null)
+              if (topUpUrl != null)
                 CtaFull(
                     icon: Icons.add,
                     label: t('company.fundTopUp'),
-                    onTap: () => _open(invest)),
-              if (_contactUrl(agents) case final contact?)
+                    tint: tint,
+                    onTap: () => _open(topUpUrl)),
+              if (contactUrl case final contact?)
                 CtaGhost(
-                    icon: Icons.chat_bubble_outline,
+                    icon: _contactIcon(contact),
                     label: t('company.contact'),
+                    tint: tint,
                     onTap: () => _open(contact)),
-              if (fund.siteUrl != null)
+              if (officialSite != null)
                 CtaGhost(
                     icon: Icons.north_east,
                     label: t('company.officialSite'),
-                    onTap: () => _open(fund.siteUrl)),
+                    tint: tint,
+                    onTap: () => _open(officialSite)),
 
               Disclaimer(t('company.moneyNote'), center: true),
               const SizedBox(height: 20),
@@ -550,15 +714,15 @@ class CompanyPage extends ConsumerWidget {
   // ── Agent → kit AgentRow ──────────────────────────────────────────────
   Widget _agentRow(Agent a, Color tint, bool divider) {
     final digits = (a.phone ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-    final sub = [
-      if (a.role != null && a.role!.isNotEmpty) a.role!,
-      if (a.phone != null && a.phone!.isNotEmpty) a.phone!,
-    ].join(' \u00b7 ');
+    // Sub-line shows the role only — the phone number is reached via the call /
+    // WhatsApp buttons, not displayed as text.
     return AgentRow(
       name: a.name,
-      phone: sub,
+      phone: (a.role ?? '').trim(),
       avatarColor: tint,
-      onCall: a.phone != null ? () => _open('tel:${a.phone}') : null,
+      onCall: (a.phone != null && a.phone!.isNotEmpty)
+          ? () => _open('tel:${a.phone}')
+          : null,
       onWhatsApp: (a.whatsapp && digits.isNotEmpty)
           ? () => _open('https://wa.me/$digits')
           : null,
@@ -577,6 +741,84 @@ class CompanyPage extends ConsumerWidget {
         SignalTag.watch => t('company.tag.watch'),
         SignalTag.note => t('company.tag.note'),
       };
+}
+
+/// App-bar follow control. A watchlist star that fills with the fund's brand
+/// [tint] when following and outlines when not, with a spring "pop" on every
+/// toggle so the state change reads. Following drives rate alerts (it's a
+/// subscription, not a bookmark), so the tooltip says Follow / Following.
+class _FollowStar extends StatefulWidget {
+  const _FollowStar({
+    required this.following,
+    required this.tint,
+    required this.onToggle,
+  });
+
+  final bool following;
+  final Color tint;
+  final VoidCallback onToggle;
+
+  @override
+  State<_FollowStar> createState() => _FollowStarState();
+}
+
+class _FollowStarState extends State<_FollowStar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 460),
+  );
+
+  late final Animation<double> _pop = TweenSequence<double>([
+    TweenSequenceItem(
+      tween: Tween(begin: 1.0, end: 1.35).chain(
+        CurveTween(curve: Curves.easeOutCubic),
+      ),
+      weight: 38,
+    ),
+    TweenSequenceItem(
+      tween: Tween(begin: 1.35, end: 1.0).chain(
+        CurveTween(curve: Curves.elasticOut),
+      ),
+      weight: 62,
+    ),
+  ]).animate(_ctrl);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _tap() {
+    widget.onToggle();
+    _ctrl.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final on = widget.following;
+    return IconButton(
+      tooltip: on ? t('company.following') : t('company.follow'),
+      onPressed: _tap,
+      icon: ScaleTransition(
+        scale: _pop,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          transitionBuilder: (child, anim) => FadeTransition(
+            opacity: anim,
+            child: ScaleTransition(scale: anim, child: child),
+          ),
+          child: Icon(
+            on ? Icons.star_rounded : Icons.star_border_rounded,
+            key: ValueKey(on),
+            color: on ? widget.tint : c.muted,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ── local building blocks (mockup cards) ─────────────────────────────────

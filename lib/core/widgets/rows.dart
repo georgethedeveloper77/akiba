@@ -272,15 +272,17 @@ class AgentRow extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 1),
-                Text(
-                  phone,
-                  style: TextStyle(
-                    color: c.muted,
-                    fontSize: 11,
-                    fontFamily: fructaFonts.mono,
+                if (phone.isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    phone,
+                    style: TextStyle(
+                      color: c.muted,
+                      fontSize: 11,
+                      fontFamily: fructaFonts.mono,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
