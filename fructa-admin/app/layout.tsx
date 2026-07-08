@@ -1,6 +1,6 @@
 import "./globals.css";
 
-export const metadata = { title: "fructa Admin" };
+export const metadata = { title: "Fructa Admin" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

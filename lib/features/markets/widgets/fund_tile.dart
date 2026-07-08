@@ -16,8 +16,8 @@ import '../../../data/snapshot_providers.dart';
 /// em-dash, never a fabricated number.
 ///
 /// [rank] is the fund's position in the current filter+sort. It shows as a
-/// small badge on the logo corner that FADES OUT after a couple of seconds
-/// long enough to read the ranking, then out of the way for a clean list. It
+/// small badge on the logo corner that FADES OUT after ~6s  long enough to
+/// read the ranking, then out of the way for a clean list. It
 /// flashes back briefly whenever the rank changes (re-sort). Top 3 wear gold.
 class FundTile extends ConsumerStatefulWidget {
   const FundTile(
@@ -83,13 +83,13 @@ class _FundTileState extends ConsumerState<FundTile> {
     _armRankFade();
   }
 
-  /// Show the rank badge, then fade it after ~2.6s. Re-armed when the rank
+  /// Show the rank badge, then fade it after ~6s. Re-armed when the rank
   /// changes so a re-sort briefly re-reveals positions.
   void _armRankFade() {
     if (widget.rank == null) return;
     _rankTimer?.cancel();
     _showRank = true;
-    _rankTimer = Timer(const Duration(milliseconds: 2600), () {
+    _rankTimer = Timer(const Duration(milliseconds: 6000), () {
       if (mounted) setState(() => _showRank = false);
     });
   }

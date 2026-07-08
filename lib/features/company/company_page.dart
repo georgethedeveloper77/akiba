@@ -196,11 +196,18 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
   }
 
   Future<void> _open(String? url) async {
-    if (url == null) return;
+    if (url == null || url.isEmpty) return;
     final uri = Uri.tryParse(url);
     if (uri == null) return;
-    if (await canLaunchUrl(uri)) {
+    // Don't gate on canLaunchUrl: for tel:/mailto:/wa.me it returns false on
+    // Android 11+ unless the schemes are declared in <queries>, which silently
+    // breaks the Contact button. Launch directly and fall back on failure.
+    try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      try {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } catch (_) {}
     }
   }
 

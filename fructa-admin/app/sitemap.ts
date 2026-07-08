@@ -20,3 +20,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ];
 }
+
+// app/sitemap.ts  (or app/sitemap.xml/route.ts)
+export const dynamic = "force-dynamic";
