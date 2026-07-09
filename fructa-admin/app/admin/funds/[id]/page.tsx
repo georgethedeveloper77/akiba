@@ -5,7 +5,26 @@ import { updateFund, setRate } from "../actions";
 
 export const dynamic = "force-dynamic";
 
-const CATS = ["mmf_kes", "mmf_usd", "tbill", "bond", "sacco", "stock"];
+// Primary type spans two columns. CIS funds carry fund_type; legacy instruments
+// (T-bill / bond / SACCO / NSE) carry category. The Type control below writes to
+// exactly one of them and clears the other, so a fund is never tagged on both.
+const FUND_TYPES: [string, string][] = [
+  ["mmf", "Money Market"],
+  ["fixed_income", "Fixed Income"],
+  ["equity", "Equity"],
+  ["balanced", "Balanced"],
+  ["special", "Special"],
+];
+const LEGACY_TYPES: [string, string][] = [
+  ["tbill", "T-Bills"],
+  ["bond", "Bonds"],
+  ["sacco", "SACCO"],
+  ["stock", "NSE"],
+];
+const CURRENCIES = ["KES", "USD", "GBP", "EUR", "ZAR"];
+
+const FT_KEYS = new Set(FUND_TYPES.map(([k]) => k));
+const LEGACY_KEYS = new Set(LEGACY_TYPES.map(([k]) => k));
 
 export default async function FundDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -16,6 +35,16 @@ export default async function FundDetail({ params }: { params: Promise<{ id: str
     db.from("rate_history").select("as_of,rate,source").eq("fund_id", id).order("as_of", { ascending: false }).limit(20),
   ]);
   if (!fund) notFound();
+
+  // Effective type: fund_type wins (mirrors catLabel in the list), else the
+  // legacy category, else unset. A stale/bogus value falls through to "" so the
+  // control shows the placeholder and forces a correct pick.
+  const currentType =
+    fund.fund_type && FT_KEYS.has(fund.fund_type)
+      ? fund.fund_type
+      : fund.category && LEGACY_KEYS.has(fund.category)
+        ? fund.category
+        : "";
 
   return (
     <>
@@ -33,8 +62,8 @@ export default async function FundDetail({ params }: { params: Promise<{ id: str
           <div className="pb" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <Field name="name" label="Name" defaultValue={fund.name} />
             <Field name="manager" label="Manager" defaultValue={fund.manager} />
-            <Select name="category" label="Category" defaultValue={fund.category} options={CATS} />
-            <Select name="currency" label="Currency" defaultValue={fund.currency} options={["KES", "USD"]} />
+            <TypeSelect defaultValue={currentType} />
+            <Select name="currency" label="Currency" defaultValue={fund.currency} options={CURRENCIES} />
             <Field name="min_invest" label="Min invest" type="number" defaultValue={fund.min_invest ?? ""} />
             <Field name="mgmt_fee" label="Mgmt fee %" type="number" defaultValue={fund.mgmt_fee ?? ""} />
             <Field name="aum" label="AUM" defaultValue={fund.aum ?? ""} />
@@ -153,6 +182,26 @@ function Select({ name, label, defaultValue, options }: { name: string; label: s
       <span>{label}</span>
       <select name={name} defaultValue={defaultValue} className="select">
         {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </label>
+  );
+}
+
+// Single Type control. Value routes in updateFund: a Funds option sets
+// fund_type (and clears category); an Instruments option sets category (and
+// clears fund_type). An unset value leaves both columns untouched on save.
+function TypeSelect({ defaultValue }: { defaultValue: string }) {
+  return (
+    <label className="field">
+      <span>Type</span>
+      <select name="type" defaultValue={defaultValue} className="select">
+        <option value="" disabled>Choose type…</option>
+        <optgroup label="Funds">
+          {FUND_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </optgroup>
+        <optgroup label="Instruments">
+          {LEGACY_TYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+        </optgroup>
       </select>
     </label>
   );

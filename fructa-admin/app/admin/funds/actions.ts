@@ -32,7 +32,11 @@ const strOrNull = (v: FormDataEntryValue | null) => {
   return s === "" ? null : s;
 };
 
+// CIS fund_type values vs legacy category (non-CIS instrument) values. The Type
+// control on the detail form sends one union value; updateFund routes it to the
+// matching column and clears the other so the two never drift out of sync.
 const FUND_TYPES = ["mmf", "fixed_income", "equity", "balanced", "special"];
+const LEGACY_TYPES = ["tbill", "bond", "sacco", "stock"];
 const CURRENCIES = ["KES", "USD", "GBP", "EUR", "ZAR"];
 const BENCHMARK_KEYS = ["tbill_91", "tbill_182", "tbill_364", "cbr"];
 
@@ -124,8 +128,7 @@ export async function setSourceType(formData: FormData) {
 export async function updateFund(formData: FormData) {
   const id = String(formData.get("id"));
   if (!id) return;
-  const type = String(formData.get("source_type"));
-  const ft = formData.get("fund_type");
+  const srcType = String(formData.get("source_type"));
 
   // Benchmark: only accept a known key, else clear it (constraint-safe).
   const bkRaw = strOrNull(formData.get("benchmark_key"));
@@ -137,7 +140,6 @@ export async function updateFund(formData: FormData) {
   const patch: Record<string, unknown> = {
     name: String(formData.get("name")),
     manager: String(formData.get("manager")),
-    category: strOrNull(formData.get("category")),
     currency: String(formData.get("currency")),
     tax_free: formData.get("tax_free") === "on",
     min_invest: numOrNull(formData.get("min_invest")),
@@ -149,7 +151,7 @@ export async function updateFund(formData: FormData) {
     contact_url: strOrNull(formData.get("contact_url")),
     logo_domain: strOrNull(formData.get("logo_domain")),
     rate_source_url: strOrNull(formData.get("rate_source_url")),
-    source_type: type === "manual" ? "manual" : "auto",
+    source_type: srcType === "manual" ? "manual" : "auto",
     status: String(formData.get("status")),
     // Profile & terms (0026).
     inception_date: strOrNull(formData.get("inception_date")),
@@ -160,8 +162,20 @@ export async function updateFund(formData: FormData) {
     top_up_min: numOrNull(formData.get("top_up_min")),
     objective: strOrNull(formData.get("objective")),
   };
-  // Only touch fund_type when the edit form actually sends it.
-  if (ft !== null && FUND_TYPES.includes(String(ft))) patch.fund_type = String(ft);
+
+  // Single Type control routes to the right column and keeps the two mutually
+  // exclusive: a CIS value sets fund_type and clears category; a legacy value
+  // sets category and clears fund_type. An empty/unknown value leaves both
+  // untouched, so a save never silently reclassifies or nulls the type.
+  const primaryType = strOrNull(formData.get("type"));
+  if (primaryType && FUND_TYPES.includes(primaryType)) {
+    patch.fund_type = primaryType;
+    patch.category = null;
+  } else if (primaryType && LEGACY_TYPES.includes(primaryType)) {
+    patch.category = primaryType;
+    patch.fund_type = null;
+  }
+
   await supabaseAdmin().from("funds").update(patch).eq("id", id);
   await republishSnapshot();
   refresh(id);
