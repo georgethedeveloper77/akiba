@@ -7,6 +7,7 @@ import '../../../core/theme.dart';
 import '../../../data/models/fund.dart';
 import '../../../data/providers.dart';
 import '../../../data/snapshot_providers.dart';
+import '../market_by_aum_page.dart';
 
 /// "Market by AUM" donut  the authoritative CIS market split by fund type,
 /// sourced from the CMA quarterly report via remote config
@@ -18,6 +19,9 @@ import '../../../data/snapshot_providers.dart';
 /// MMFs; by AUM the market is ~52% MMF. SACCOs are a separate (SASRA) market
 /// and are intentionally absent from this CIS pie  a coverage line notes how
 /// many retail funds the app tracks instead.
+///
+/// This card is a compact preview: tapping it opens [MarketByAumPage], which
+/// carries the interactive donut and the asset-class view.
 const _labels = {
   'mmf': 'Money Market',
   'fixed_income': 'Fixed Income',
@@ -49,19 +53,11 @@ String _asOfTag(String iso) {
   return "Q$q '$year";
 }
 
-class MarketAllocationDonut extends ConsumerStatefulWidget {
+class MarketAllocationDonut extends ConsumerWidget {
   const MarketAllocationDonut({super.key});
 
   @override
-  ConsumerState<MarketAllocationDonut> createState() =>
-      _MarketAllocationDonutState();
-}
-
-class _MarketAllocationDonutState extends ConsumerState<MarketAllocationDonut> {
-  int _touched = -1;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final c = context.c;
     final cfg = ref.watch(remoteConfigProvider);
 
@@ -75,6 +71,10 @@ class _MarketAllocationDonutState extends ConsumerState<MarketAllocationDonut> {
     // pie, not a slice of it.
     final funds = ref.watch(ratesProvider).valueOrNull ?? const <Fund>[];
     final tracked = funds.where((f) => f.retail).length;
+
+    void open() => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MarketByAumPage()),
+        );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
@@ -102,97 +102,98 @@ class _MarketAllocationDonutState extends ConsumerState<MarketAllocationDonut> {
                   fontSize: 10.5,
                 ),
               ),
+              const Spacer(),
+              Text(
+                'Detail',
+                style: TextStyle(
+                  color: c.accentInk,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Icon(Icons.chevron_right, size: 16, color: c.accentInk),
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: c.s1,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: c.line),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      PieChart(
-                        PieChartData(
-                          sectionsSpace: 2,
-                          centerSpaceRadius: 30,
-                          startDegreeOffset: -90,
-                          pieTouchData: PieTouchData(
-                            touchCallback: (event, resp) {
-                              if (!event.isInterestedForInteractions ||
-                                  resp?.touchedSection == null) {
-                                setState(() => _touched = -1);
-                                return;
-                              }
-                              setState(
-                                () => _touched =
-                                    resp!.touchedSection!.touchedSectionIndex,
-                              );
-                            },
+          InkWell(
+            onTap: open,
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: c.s1,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: c.line),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 120,
+                    height: 120,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        PieChart(
+                          PieChartData(
+                            sectionsSpace: 2,
+                            centerSpaceRadius: 30,
+                            startDegreeOffset: -90,
+                            pieTouchData: PieTouchData(enabled: false),
+                            sections: [
+                              for (final s in split)
+                                PieChartSectionData(
+                                  value: s.share,
+                                  color: _typeColor(s.type),
+                                  radius: 18,
+                                  showTitle: false,
+                                ),
+                            ],
                           ),
-                          sections: [
-                            for (var i = 0; i < split.length; i++)
-                              PieChartSectionData(
-                                value: split[i].share,
-                                color: _typeColor(split[i].type),
-                                radius: i == _touched ? 22 : 18,
-                                showTitle: false,
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _compactKes(totalAum),
+                              style: TextStyle(
+                                color: c.text,
+                                fontFamily: fructaFonts.mono,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
                               ),
+                            ),
+                            Text(
+                              'KES AUM',
+                              style: TextStyle(
+                                color: c.faint,
+                                fontSize: 8.5,
+                                letterSpacing: 0.6,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ],
                         ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _compactKes(totalAum),
-                            style: TextStyle(
-                              color: c.text,
-                              fontFamily: fructaFonts.mono,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            'KES AUM',
-                            style: TextStyle(
-                              color: c.faint,
-                              fontSize: 8.5,
-                              letterSpacing: 0.6,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (var i = 0; i < split.length; i++)
-                        _LegendRow(
-                          label: _labels[split[i].type] ?? split[i].type,
-                          color: _typeColor(split[i].type),
-                          share: split[i].share,
-                          aum: split[i].aumKes,
-                          highlight: i == _touched,
-                        ),
-                    ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final s in split)
+                          _LegendRow(
+                            label: _labels[s.type] ?? s.type,
+                            color: _typeColor(s.type),
+                            share: s.share,
+                            aum: s.aumKes,
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           if (tracked > 0) ...[
@@ -218,13 +219,11 @@ class _LegendRow extends StatelessWidget {
     required this.color,
     required this.share,
     required this.aum,
-    required this.highlight,
   });
   final String label;
   final Color color;
   final double share;
   final double aum;
-  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
@@ -246,9 +245,8 @@ class _LegendRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: highlight ? c.text : c.muted,
+                color: c.muted,
                 fontSize: 12.5,
-                fontWeight: highlight ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
           ),
@@ -256,7 +254,7 @@ class _LegendRow extends StatelessWidget {
           Text(
             '${share.toStringAsFixed(share < 10 ? 1 : 0)}%',
             style: TextStyle(
-              color: highlight ? c.text : c.muted,
+              color: c.muted,
               fontFamily: fructaFonts.mono,
               fontSize: 12,
               fontWeight: FontWeight.w600,

@@ -6,6 +6,7 @@ import 'models/fund_composition.dart';
 import 'models/insurer.dart';
 import 'models/learn.dart';
 import 'models/market_event.dart';
+import 'models/post.dart';
 import 'models/remote_config.dart';
 
 /// Everything in the v2 snapshot beyond `funds` (which keeps flowing through
@@ -23,6 +24,7 @@ class SnapshotExtras {
   final Map<String, FundComposition> _composition; // fundId -> breakdown
   final RemoteConfig config; // V6 admin-editable copy/flags
   final LearnContent learn; // D2 admin-authored learn content
+  final List<Post> posts; // D3 blog posts (articles + briefs)
   final DateTime? generatedAt; // snapshot publish time, for the "Updated" stamp
 
   const SnapshotExtras({
@@ -37,6 +39,7 @@ class SnapshotExtras {
     Map<String, FundComposition> composition = const {},
     this.config = RemoteConfig.empty,
     this.learn = LearnContent.empty,
+    this.posts = const [],
     this.generatedAt,
   }) : _deltas = deltas,
        _composition = composition;
@@ -125,6 +128,10 @@ class SnapshotExtras {
         ? LearnContent.fromJson((m['learn'] as Map).cast<String, dynamic>())
         : LearnContent.empty;
 
+    final posts = (m['posts'] as List? ?? const [])
+        .map((e) => Post.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
+
     final generatedAt = DateTime.tryParse(
       (m['generated_at'] ?? '') as String,
     )?.toLocal();
@@ -132,6 +139,7 @@ class SnapshotExtras {
     return SnapshotExtras(
       schema: 2,
       learn: learn,
+      posts: posts,
       generatedAt: generatedAt,
       companies: companies,
       agents: agents,

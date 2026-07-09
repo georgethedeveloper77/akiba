@@ -1,10 +1,15 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import {
   deleteLesson,
   deleteStep,
   deleteUnit,
+  moveLesson,
+  moveStep,
+  reorderLessons,
+  reorderSteps,
+  reorderUnits,
   republishNow,
   saveLesson,
   saveStep,
@@ -14,6 +19,7 @@ import {
   type LearnStepRow,
   type LearnUnitRow,
 } from "./actions";
+import { LessonsDnd, StepsDnd, UnitsDnd } from "./Sortable";
 import { IconChevronRight, IconPlus, IconRefresh, IconX } from "../_icons";
 
 // ── shared styles ────────────────────────────────────────────────────────────
@@ -146,11 +152,15 @@ function StepCard({
   lessonId,
   mode = "edit",
   onDone,
+  handle,
+  dragging = false,
 }: {
   step?: LearnStepRow;
   lessonId: string;
   mode?: "edit" | "create";
   onDone?: () => void;
+  handle?: ReactNode;
+  dragging?: boolean;
 }) {
   const [kind, setKind] = useState(step?.kind ?? "explainer");
   const [ord, setOrd] = useState(String(step?.ord ?? 0));
@@ -213,8 +223,16 @@ function StepCard({
   const opts = (p.options as { text: string; correct: boolean }[]) ?? [];
 
   return (
-    <div className="rounded-lg border border-line bg-panel2 p-3">
+    <div
+      className={
+        "rounded-lg border bg-panel2 p-3 transition-shadow " +
+        (dragging
+          ? "border-gold/70 shadow-lg shadow-black/30"
+          : "border-line")
+      }
+    >
       <div className="mb-2 flex items-center gap-2">
+        {handle}
         <select
           value={kind}
           onChange={(e) => changeKind(e.target.value)}
@@ -464,12 +482,16 @@ function LessonCard({
   funds,
   mode = "edit",
   onDone,
+  handle,
+  dragging = false,
 }: {
   lesson?: LearnLessonRow;
   unitId: string;
   funds: FundOption[];
   mode?: "edit" | "create";
   onDone?: () => void;
+  handle?: ReactNode;
+  dragging?: boolean;
 }) {
   const [title, setTitle] = useState(lesson?.title ?? "");
   const [ord, setOrd] = useState(String(lesson?.ord ?? 0));
@@ -479,6 +501,10 @@ function LessonCard({
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [addingStep, setAddingStep] = useState(false);
+  const stepDrop = StepsDnd.useHeaderDrop(
+    lesson?.id ?? "",
+    lesson?.steps.length ?? 0,
+  );
 
   function save() {
     const fd = new FormData();
@@ -559,9 +585,22 @@ function LessonCard({
       {mode === "edit" && lesson && (
         <div className="mt-2 space-y-2 border-t border-line pt-3">
           <p className="text-[11px] uppercase tracking-wider text-faint">Steps</p>
-          {lesson.steps.map((s) => (
-            <StepCard key={s.id} step={s} lessonId={lesson.id} />
-          ))}
+          <StepsDnd.Group
+            groupId={lesson.id}
+            items={lesson.steps}
+            className="space-y-2"
+            emptyHint="Drop a step here"
+            handleLabel={(s) => `Reorder ${s.kind} step`}
+            renderItem={(s, { handle, dragging }) => (
+              <StepCard
+                step={s}
+                lessonId={lesson.id}
+                handle={handle}
+                dragging={dragging}
+              />
+            )}
+          />
+          <StepsDnd.Pending />
           {addingStep ? (
             <StepCard
               lessonId={lesson.id}
@@ -583,8 +622,25 @@ function LessonCard({
   }
 
   return (
-    <details className="group rounded-lg border border-line bg-panel [&_summary::-webkit-details-marker]:hidden">
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2">
+    <details
+      className={
+        "group rounded-lg border bg-panel transition-shadow [&_summary::-webkit-details-marker]:hidden " +
+        (dragging
+          ? "border-gold/70 shadow-lg shadow-black/30"
+          : stepDrop.isTarget
+            ? "border-gold/70"
+            : "border-line")
+      }
+    >
+      <summary
+        onDragOver={stepDrop.onDragOver}
+        onDragEnter={stepDrop.onDragEnter}
+        className={
+          "flex cursor-pointer list-none items-center gap-2 rounded-t-lg px-3 py-2 " +
+          (stepDrop.isTarget ? "bg-gold/10" : "")
+        }
+      >
+        {handle}
         <span className="text-faint transition-transform group-open:rotate-90">
           <IconChevronRight size={14} />
         </span>
@@ -607,12 +663,16 @@ function UnitCard({
   funds,
   mode = "edit",
   onDone,
+  handle,
+  dragging = false,
 }: {
   unit?: LearnUnitRow;
   units: LearnUnitRow[];
   funds: FundOption[];
   mode?: "edit" | "create";
   onDone?: () => void;
+  handle?: ReactNode;
+  dragging?: boolean;
 }) {
   const [title, setTitle] = useState(unit?.title ?? "");
   const [ord, setOrd] = useState(String(unit?.ord ?? 0));
@@ -623,6 +683,10 @@ function UnitCard({
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const [addingLesson, setAddingLesson] = useState(false);
+  const lessonDrop = LessonsDnd.useHeaderDrop(
+    unit?.id ?? "",
+    unit?.lessons.length ?? 0,
+  );
 
   const others = units.filter((u) => u.id !== unit?.id);
 
@@ -713,9 +777,23 @@ function UnitCard({
       {mode === "edit" && unit && (
         <div className="mt-2 space-y-2 border-t border-line pt-3">
           <p className="text-[11px] uppercase tracking-wider text-faint">Lessons</p>
-          {unit.lessons.map((l) => (
-            <LessonCard key={l.id} lesson={l} unitId={unit.id} funds={funds} />
-          ))}
+          <LessonsDnd.Group
+            groupId={unit.id}
+            items={unit.lessons}
+            className="space-y-2"
+            emptyHint="Drop a lesson here"
+            handleLabel={(l) => `Reorder lesson ${l.title}`}
+            renderItem={(l, { handle, dragging }) => (
+              <LessonCard
+                lesson={l}
+                unitId={unit.id}
+                funds={funds}
+                handle={handle}
+                dragging={dragging}
+              />
+            )}
+          />
+          <LessonsDnd.Pending />
           {addingLesson ? (
             <LessonCard
               unitId={unit.id}
@@ -738,8 +816,25 @@ function UnitCard({
   }
 
   return (
-    <details className="group rounded-xl border border-line bg-panel [&_summary::-webkit-details-marker]:hidden">
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3">
+    <details
+      className={
+        "group rounded-xl border bg-panel transition-shadow [&_summary::-webkit-details-marker]:hidden " +
+        (dragging
+          ? "border-gold/70 shadow-lg shadow-black/30"
+          : lessonDrop.isTarget
+            ? "border-gold/70"
+            : "border-line")
+      }
+    >
+      <summary
+        onDragOver={lessonDrop.onDragOver}
+        onDragEnter={lessonDrop.onDragEnter}
+        className={
+          "flex cursor-pointer list-none items-center gap-2 rounded-t-xl px-4 py-3 " +
+          (lessonDrop.isTarget ? "bg-gold/10" : "")
+        }
+      >
+        {handle}
         <span className="text-faint transition-transform group-open:rotate-90">
           <IconChevronRight size={16} />
         </span>
@@ -780,46 +875,91 @@ export function LearnClient({
   );
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
-        <Kpi label="Units" value={units.length} />
-        <Kpi label="Lessons" value={lessonCount} />
-        <Kpi label="Steps" value={stepCount} />
-      </div>
+    <StepsDnd.Board
+      reorder={(g, ids) => reorderSteps(g, ids)}
+      move={(id, to, i) => moveStep(id, to, i)}
+    >
+      <LessonsDnd.Board
+        reorder={(g, ids) => reorderLessons(g, ids)}
+        move={(id, to, i) => moveLesson(id, to, i)}
+      >
+        <UnitsDnd.Board reorder={(_g, ids) => reorderUnits(ids)}>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <Kpi label="Units" value={units.length} />
+              <Kpi label="Lessons" value={lessonCount} />
+              <Kpi label="Steps" value={stepCount} />
+            </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => start(async () => void (await republishNow()))}
-          disabled={pending}
-          className={btnGhost + " px-3 py-1.5"}
-        >
-          <IconRefresh size={13} /> {pending ? "Publishing…" : "Republish snapshot"}
-        </button>
-        <span className="text-[11px] text-faint">Saves already republish automatically.</span>
-      </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => start(async () => void (await republishNow()))}
+                disabled={pending}
+                className={btnGhost + " px-3 py-1.5"}
+              >
+                <IconRefresh size={13} />{" "}
+                {pending ? "Publishing…" : "Republish snapshot"}
+              </button>
+              <span className="text-[11px] text-faint">
+                Saves already republish automatically.
+              </span>
+            </div>
 
-      <div className="space-y-3">
-        {units.map((u) => (
-          <UnitCard key={u.id} unit={u} units={units} funds={funds} />
-        ))}
-      </div>
+            {units.length > 0 && (
+              <p className="text-[11px] leading-relaxed text-faint">
+                Grab the grip to reorder units, lessons and steps. Drag a lesson
+                onto another unit (or a step onto another lesson) to move it
+                there; drop on a unit or lesson header to file it at the end.
+                Keyboard: focus a grip, then use the arrow keys. Changes publish
+                on drop.
+              </p>
+            )}
 
-      {units.length === 0 && (
-        <p className="rounded-xl border border-line bg-panel px-4 py-10 text-center text-sm text-mute">
-          No units yet. Add the first one below.
-        </p>
-      )}
+            {units.length > 0 && (
+              <UnitsDnd.Group
+                groupId="root"
+                items={units}
+                className="space-y-3"
+                handleLabel={(u) => `Reorder unit ${u.title}`}
+                renderItem={(u, { handle, dragging }) => (
+                  <UnitCard
+                    unit={u}
+                    units={units}
+                    funds={funds}
+                    handle={handle}
+                    dragging={dragging}
+                  />
+                )}
+              />
+            )}
+            <UnitsDnd.Pending />
 
-      <div className="space-y-3 rounded-xl border border-dashed border-line bg-panel p-4">
-        <p className="text-[11px] uppercase tracking-wider text-faint">Add a unit</p>
-        {addingUnit ? (
-          <UnitCard units={units} funds={funds} mode="create" onDone={() => setAddingUnit(false)} />
-        ) : (
-          <button onClick={() => setAddingUnit(true)} className={btnGhost}>
-            <IconPlus size={13} /> New unit
-          </button>
-        )}
-      </div>
-    </div>
+            {units.length === 0 && (
+              <p className="rounded-xl border border-line bg-panel px-4 py-10 text-center text-sm text-mute">
+                No units yet. Add the first one below.
+              </p>
+            )}
+
+            <div className="space-y-3 rounded-xl border border-dashed border-line bg-panel p-4">
+              <p className="text-[11px] uppercase tracking-wider text-faint">
+                Add a unit
+              </p>
+              {addingUnit ? (
+                <UnitCard
+                  units={units}
+                  funds={funds}
+                  mode="create"
+                  onDone={() => setAddingUnit(false)}
+                />
+              ) : (
+                <button onClick={() => setAddingUnit(true)} className={btnGhost}>
+                  <IconPlus size={13} /> New unit
+                </button>
+              )}
+            </div>
+          </div>
+        </UnitsDnd.Board>
+      </LessonsDnd.Board>
+    </StepsDnd.Board>
   );
 }

@@ -178,3 +178,28 @@ export interface SnapshotLearnUnit {
 export interface SnapshotLearn {
   units: SnapshotLearnUnit[];
 }
+
+// ── Posts (D3) ──────────────────────────────────────────────────────────────
+// Blog articles + curated market briefs from the unified posts table, published
+// inside the snapshot next to learn. `kind` discriminates: 'article' (evergreen,
+// hero + reading time) vs 'brief' (short, timely, optional fund/company link).
+// Only published rows are serialised; pinned first, newest first. There is no
+// news scraper — briefs are authored in admin. The builder maps the DB's 0035
+// names (excerpt -> summary, cover_url -> hero_image_url) into this app shape;
+// slug is the identity (no separate id).
+
+export interface SnapshotPost {
+  slug: string;
+  kind: "article" | "brief";
+  title: string;
+  summary: string | null;       // from posts.excerpt
+  body: string | null;
+  hero_image_url: string | null; // from posts.cover_url
+  author: string | null;
+  tags: string[];
+  fund_id: string | null;       // optional soft link, resolved to live rate in-app
+  company_id: string | null;    // optional soft link
+  pinned: boolean;
+  reading_minutes: number | null;
+  published_at: string | null;
+}

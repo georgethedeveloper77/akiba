@@ -30,3 +30,21 @@ const fundTypeColors = <String, Color>{
 
 Color fundTypeColor(String? t) =>
     fundTypeColors[t] ?? const Color(0xFF8A92A3);
+
+/// Asset-class colours for the CMA market-allocation view (where the market's
+/// money actually sits). Keyed by the CIS class keys published under
+/// `market.asset_classes`. Data colours, centralised like [fundTypeColors] so
+/// no widget carries raw hex.
+const assetClassColors = <String, Color>{
+  'gok': Color(0xFFE0B34C), // gold  — government securities
+  'fixed_deposits': Color(0xFF4E8FE8), // sky
+  'cash': Color(0xFF34D399), // green
+  'unlisted': Color(0xFF9A8BF3), // iris
+  'listed': Color(0xFF2FB5A0), // emerald
+  'offshore': Color(0xFFE7784C), // ember
+  'other_cis': Color(0xFF31B7C2), // cyan
+  'alternative': Color(0xFFEC8FB0), // pink
+};
+
+Color assetClassColor(String? k) =>
+    assetClassColors[k] ?? const Color(0xFF8A92A3);

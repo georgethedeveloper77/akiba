@@ -161,6 +161,127 @@ export async function deleteStep(id: string): Promise<Result> {
   return { ok: true, error: null };
 }
 
+// ── Reorder (drag & drop) ────────────────────────────────────────────────────
+// Persist a new order by writing ord = array index. Rows are updated one at a
+// time (never a partial upsert) so no unrelated column is nulled. On failure we
+// revalidate without republishing, so the client resyncs to the DB truth and
+// the optimistic order reverts.
+
+async function applyOrder(
+  table: "learn_units" | "learn_lessons" | "learn_steps",
+  ids: string[],
+  scope?: { col: string; val: string },
+): Promise<Result> {
+  const db = supabaseAdmin();
+  const results = await Promise.all(
+    ids.map((id, i) => {
+      let q = db.from(table).update({ ord: i }).eq("id", id);
+      if (scope) q = q.eq(scope.col, scope.val);
+      return q;
+    }),
+  );
+  const bad = results.find((r) => r.error);
+  if (bad?.error) {
+    revalidatePath("/admin/learn");
+    return { ok: false, error: bad.error.message };
+  }
+  await publishAndRevalidate();
+  return { ok: true, error: null };
+}
+
+export async function reorderUnits(ids: string[]): Promise<Result> {
+  return applyOrder("learn_units", ids);
+}
+
+export async function reorderLessons(
+  unitId: string,
+  ids: string[],
+): Promise<Result> {
+  return applyOrder("learn_lessons", ids, { col: "unit_id", val: unitId });
+}
+
+export async function reorderSteps(
+  lessonId: string,
+  ids: string[],
+): Promise<Result> {
+  return applyOrder("learn_steps", ids, { col: "lesson_id", val: lessonId });
+}
+
+// ── Move across parents (cross-container drag) ───────────────────────────────
+// Re-parent one child and reindex BOTH the old and new parent so every ord in
+// each list stays a clean 0..n-1. Target order is rebuilt from DB truth (the
+// child spliced in at `index`), so it never depends on stale client ords.
+
+async function moveChild(
+  table: "learn_lessons" | "learn_steps",
+  parentCol: "unit_id" | "lesson_id",
+  childId: string,
+  toParent: string,
+  index: number,
+): Promise<Result> {
+  const db = supabaseAdmin();
+
+  const cur = await db.from(table).select(parentCol).eq("id", childId).single();
+  if (cur.error) return { ok: false, error: cur.error.message };
+  const fromParent = (cur.data as Record<string, string | null>)[parentCol];
+
+  // Re-parent first so the child is counted in the destination.
+  const rep = await db.from(table).update({ [parentCol]: toParent }).eq("id", childId);
+  if (rep.error) {
+    revalidatePath("/admin/learn");
+    return { ok: false, error: rep.error.message };
+  }
+
+  // Destination order: existing children (minus the moved one) with it spliced in.
+  const dest = await db
+    .from(table)
+    .select("id")
+    .eq(parentCol, toParent)
+    .neq("id", childId)
+    .order("ord");
+  const destIds = (dest.data ?? []).map((r: { id: string }) => r.id);
+  const at = Math.max(0, Math.min(index, destIds.length));
+  destIds.splice(at, 0, childId);
+
+  const writes = destIds.map((id: string, i: number) =>
+    db.from(table).update({ ord: i }).eq("id", id),
+  );
+
+  // Compact the source parent (only when it actually changed).
+  if (fromParent && fromParent !== toParent) {
+    const src = await db.from(table).select("id").eq(parentCol, fromParent).order("ord");
+    const srcIds = (src.data ?? []).map((r: { id: string }) => r.id);
+    srcIds.forEach((id: string, i: number) =>
+      writes.push(db.from(table).update({ ord: i }).eq("id", id)),
+    );
+  }
+
+  const results = await Promise.all(writes);
+  const bad = results.find((r) => r.error);
+  if (bad?.error) {
+    revalidatePath("/admin/learn");
+    return { ok: false, error: bad.error.message };
+  }
+  await publishAndRevalidate();
+  return { ok: true, error: null };
+}
+
+export async function moveLesson(
+  lessonId: string,
+  toUnitId: string,
+  index: number,
+): Promise<Result> {
+  return moveChild("learn_lessons", "unit_id", lessonId, toUnitId, index);
+}
+
+export async function moveStep(
+  stepId: string,
+  toLessonId: string,
+  index: number,
+): Promise<Result> {
+  return moveChild("learn_steps", "lesson_id", stepId, toLessonId, index);
+}
+
 // ── Manual republish ─────────────────────────────────────────────────────────
 
 export async function republishNow(): Promise<Result> {
@@ -170,7 +291,7 @@ export async function republishNow(): Promise<Result> {
 
 // ── Bulk import ──────────────────────────────────────────────────────────────
 // Paste a whole authored document (typically AI-generated) as one JSON tree and
-// upsert it. Ids are optional — generated from titles when absent — and order
+// upsert it. Ids are optional (generated from titles when absent) and order
 // falls back to array position, so a minimal doc still imports cleanly.
 
 export interface ImportResult {

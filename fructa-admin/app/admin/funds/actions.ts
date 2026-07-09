@@ -252,7 +252,8 @@ type FundLite = {
 // Normalise for matching: lowercase, strip accents/punctuation, and drop
 // trailing currency tokens so "KCB Money Market Fund KES" matches "KCB Money
 // Market Fund". Collisions (KES + USD sharing a base name) are resolved by
-// pickCandidate, which prefers the retail KES fund — the one these rows mean.
+// pickCandidate, which uses the row's currency hint (see currencyHint) and
+// falls back to the retail KES fund — the one the weekly MMF rows mean.
 const CCY_TOKENS = new Set(["kes", "usd", "gbp", "eur", "zar"]);
 function normName(s: string): string {
   return s
@@ -265,8 +266,31 @@ function normName(s: string): string {
     .join("");
 }
 
-function pickCandidate(list: FundLite[]): FundLite {
+// Currency implied by the row name, e.g. "Stanbic Fixed Income Fund USD" or
+// "NCBA Fixed Income Basket (USD) Fund" -> "USD". normName strips currency
+// tokens, so a KES and a USD fund sharing a base name collapse to one key;
+// this hint lets pickCandidate route each row to the fund in its own currency
+// instead of both landing on the retail KES fund.
+const CCY_HINTS = ["USD", "GBP", "EUR", "ZAR", "KES"];
+function currencyHint(raw: string): string | null {
+  const t = raw.toLowerCase();
+  for (const c of CCY_HINTS) {
+    const lc = c.toLowerCase();
+    if (t.includes(`(${lc})`) || new RegExp(`(^|[^a-z])${lc}([^a-z]|$)`).test(t)) {
+      return c;
+    }
+  }
+  return null;
+}
+
+// Choose which DB fund a row lands on when its normalised name matches several
+// (a KES/USD pair). A currency hint wins; otherwise prefer the retail KES fund.
+function pickCandidate(list: FundLite[], ccyHint: string | null): FundLite {
   if (list.length === 1) return list[0];
+  if (ccyHint) {
+    const m = list.find((f) => f.currency === ccyHint);
+    if (m) return m;
+  }
   return (
     list.find((f) => f.retail && f.currency === "KES") ??
     list.find((f) => f.currency === "KES") ??
@@ -300,15 +324,33 @@ export async function previewFundImport(
   fillOnly: boolean,
 ): Promise<ImportPreview> {
   const idx = await loadFundIndex();
-  const matched: MatchRow[] = [];
   const unmatched: string[] = [];
+
+  // Resolve each row to a single fund via its currency hint, then dedupe by
+  // fundId. Two rows collapsing onto one fund (e.g. a USD row with no USD fund
+  // in the DB falling back to the KES fund) keep the row whose currency
+  // actually matches the fund — so a USD figure never overwrites the KES fund,
+  // and the preview never emits two children with the same key.
+  type Resolved = { f: FundLite; r: ImportRow; hintMatch: boolean };
+  const byFund = new Map<string, Resolved>();
+
   for (const r of rows) {
     const cands = idx.get(normName(r.name));
     if (!cands || cands.length === 0) {
       unmatched.push(r.name);
       continue;
     }
-    const f = pickCandidate(cands);
+    const hint = currencyHint(r.name);
+    const f = pickCandidate(cands, hint);
+    const hintMatch = hint != null && hint === f.currency;
+    const prev = byFund.get(f.id);
+    if (!prev || (hintMatch && !prev.hintMatch)) {
+      byFund.set(f.id, { f, r, hintMatch });
+    }
+  }
+
+  const matched: MatchRow[] = [];
+  for (const { f, r } of byFund.values()) {
     matched.push({
       fundId: f.id,
       fundName: f.name,

@@ -6,7 +6,7 @@ import { supabaseBrowser } from "@/lib/supabase/auth-browser";
 import {
   IconOverview, IconFunds, IconCompanies, IconInsurers, IconAgents,
   IconSources, IconScrapers, IconImport, IconInsights, IconConfig,
-  IconLearn, IconBell, IconPages, IconSettings,
+  IconLearn, IconBell, IconPages, IconSettings, IconArticle,
   IconSearch, IconPower, IconRefresh,
 } from "./_icons";
 import type { SVGProps } from "react";
@@ -33,7 +33,8 @@ const DATA: NavItem[] = [
 ];
 
 const SITE: NavItem[] = [
-  { href: "/admin/content", label: "Content", icon: IconPages, title: "Content", crumb: "pages & blog" },
+  { href: "/admin/blog", label: "Blog", icon: IconArticle, title: "Blog", crumb: "articles & briefs" },
+  { href: "/admin/content", label: "Content", icon: IconPages, title: "Content", crumb: "legal & marketing pages" },
   { href: "/admin/settings", label: "Settings", icon: IconSettings, title: "Settings", crumb: "brand · SEO · landing" },
 ];
 
@@ -118,7 +119,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="crumb">{current.crumb} · {today}</div>
             </div>
             <div className="spacer" />
-            {/* Pipeline stages — neutral until wired to last-run health */}
+            {/* Pipeline stages - neutral until wired to last-run health */}
             <div className="pipeline" title="scrape → validate → write → publish">
               {["scrape", "validate", "write", "snapshot"].map((s) => (
                 <span className="pn" key={s}>

@@ -84,14 +84,26 @@ final marketSearchOpenProvider = StateProvider<bool>((_) => false);
 const kFundsInitial = 20;
 final showAllFundsProvider = StateProvider<bool>((_) => false);
 
-/// Tabs that actually have something to show  a retail fund with a rate.
-/// Hides empty categories (REIT, Balanced, Islamic…) instead of dead ends.
-/// `all` is always present.
+// NAV-priced fund types (equity/balanced/special) don't quote a single annual
+// yield  they stand on AUM and holdings. Tab visibility must NOT gate them on
+// currentRate, or their tabs never appear even once they're retail-visible.
+// Keyed on fund_type (not `basis`) so this holds regardless of whether the
+// snapshot publishes basis yet.
+bool _isNavType(Fund f) =>
+    f.fundType == 'equity' ||
+    f.fundType == 'balanced' ||
+    f.fundType == 'special';
+
+/// Tabs that actually have something to show. A fund earns its tab when it's
+/// retail and either quotes a rate OR is a NAV-priced type (which shows on AUM
+/// alone). `all` is always present. This keeps genuinely-empty yield tabs
+/// hidden while surfacing Equity/Balanced/Special once their funds go retail.
 final visibleMarketTabsProvider = Provider<List<MarketTab>>((ref) {
   final funds = ref.watch(ratesProvider).valueOrNull ?? const [];
+  bool hasData(Fund f) => f.currentRate != null || _isNavType(f);
   bool populated(MarketTab t) =>
       t == MarketTab.all ||
-      funds.any((f) => f.retail && f.currentRate != null && t.matches(f));
+      funds.any((f) => f.retail && t.matches(f) && hasData(f));
   return MarketTab.values.where(populated).toList();
 });
 

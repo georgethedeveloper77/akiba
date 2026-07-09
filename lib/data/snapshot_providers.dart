@@ -7,6 +7,7 @@ import 'models/fund_composition.dart';
 import 'models/insurer.dart';
 import 'models/learn.dart';
 import 'models/market_event.dart';
+import 'models/post.dart';
 import 'models/remote_config.dart';
 import 'providers.dart';
 import 'snapshot_extras.dart';
@@ -89,6 +90,21 @@ final usdKesProvider = Provider<double?>((ref) {
 final learnProvider = Provider<LearnContent>(
   (ref) => ref.watch(snapshotExtrasProvider).learn,
 );
+
+/// D3 blog posts (articles + briefs) from the snapshot, already pinned-first,
+/// newest-first. Empty until the snapshot carries any  the Blog surface shows
+/// its empty state rather than a fabricated list.
+final postsProvider = Provider<List<Post>>(
+  (ref) => ref.watch(snapshotExtrasProvider).posts,
+);
+
+/// A single post by slug, or null when the snapshot doesn't carry it.
+final postBySlugProvider = Provider.family<Post?, String>((ref, slug) {
+  for (final p in ref.watch(postsProvider)) {
+    if (p.slug == slug) return p;
+  }
+  return null;
+});
 
 /// When the snapshot was last published (local time), or null on a v1/cached
 /// body without a stamp. Drives the Markets "Updated …" line honestly.

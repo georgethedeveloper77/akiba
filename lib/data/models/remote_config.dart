@@ -15,6 +15,16 @@ class MarketFundType {
   final double share; // percent of total market AUM
 }
 
+/// One asset-class slice of the CMA market allocation  where the whole
+/// market's money actually sits (Table 9). Published under
+/// `market.asset_classes`. Share only: the CIS report gives allocation
+/// percentages, not per-class AUM.
+class MarketAssetClass {
+  const MarketAssetClass(this.clazz, this.share);
+  final String clazz; // gok | fixed_deposits | cash | unlisted | listed | offshore | other_cis | alternative
+  final double share; // percent of total market assets
+}
+
 /// Admin-editable key/value config, published inside the snapshot (`config`).
 /// Every getter takes a baked-in fallback so the app renders correctly with
 /// an old snapshot, an empty table, or a bad value  remote config can only
@@ -127,6 +137,58 @@ class RemoteConfig {
 
   String? get marketSource {
     final v = _values['market.aum_by_fund_type'];
+    return v is Map ? v['source'] as String? : null;
+  }
+
+  // market.asset_classes:
+  //   {"as_of":"2026-03-31","source":"CMA CIS Q1 2026",
+  //    "classes":[{"class":"gok","share":44.0}, …]}
+  //
+  // Where the whole market's money sits (CIS Table 9). Feeds the asset-class
+  // view on the Market-by-AUM page. Baked Q1-2026 fallback so it always renders.
+
+  static const _assetClassFallback = [
+    MarketAssetClass('gok', 44.0),
+    MarketAssetClass('fixed_deposits', 23.5),
+    MarketAssetClass('cash', 14.1),
+    MarketAssetClass('unlisted', 8.8),
+    MarketAssetClass('listed', 7.0),
+    MarketAssetClass('offshore', 1.9),
+    MarketAssetClass('other_cis', 0.4),
+    MarketAssetClass('alternative', 0.3),
+  ];
+
+  /// Market allocation by asset class, sorted by share desc. Falls back to the
+  /// baked Q1-2026 figures when the key is unset or malformed.
+  List<MarketAssetClass> marketAssetClasses() {
+    final v = _values['market.asset_classes'];
+    if (v is Map && v['classes'] is List) {
+      final out = <MarketAssetClass>[];
+      for (final e in (v['classes'] as List)) {
+        if (e is Map && e['class'] is String && e['share'] is num) {
+          out.add(
+            MarketAssetClass(
+              e['class'] as String,
+              (e['share'] as num).toDouble(),
+            ),
+          );
+        }
+      }
+      if (out.isNotEmpty) {
+        out.sort((a, b) => b.share.compareTo(a.share));
+        return out;
+      }
+    }
+    return _assetClassFallback;
+  }
+
+  String? get marketAssetsAsOf {
+    final v = _values['market.asset_classes'];
+    return v is Map ? v['as_of'] as String? : null;
+  }
+
+  String? get marketAssetsSource {
+    final v = _values['market.asset_classes'];
     return v is Map ? v['source'] as String? : null;
   }
 }

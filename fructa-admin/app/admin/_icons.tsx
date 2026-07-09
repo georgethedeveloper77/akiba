@@ -107,3 +107,28 @@ export const IconBell = (p: IconProps) => (
 export const IconSend = (p: IconProps) => (
   <svg {...base(p)}><path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4 20-7Z" /></svg>
 );
+
+export const IconUpload = (p: IconProps) => (
+  <svg {...base(p)}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 8l5-5 5 5" /><path d="M12 3v12" /></svg>
+);
+export const IconFile = (p: IconProps) => (
+  <svg {...base(p)}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" /><path d="M14 3v5h5" /></svg>
+);
+export const IconArticle = (p: IconProps) => (
+  <svg {...base(p)}><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" /><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6Z" /></svg>
+);
+export const IconEdit = (p: IconProps) => (
+  <svg {...base(p)}><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z" /></svg>
+);
+export const IconPin = (p: IconProps) => (
+  <svg {...base(p)}><path d="M12 17v5" /><path d="M9 10.8V4h6v6.8a2 2 0 0 0 .6 1.4L18 15H6l2.4-2.8a2 2 0 0 0 .6-1.4Z" /></svg>
+);
+export const IconTrash = (p: IconProps) => (
+  <svg {...base(p)}><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
+);
+export const IconAlert = (p: IconProps) => (
+  <svg {...base(p)}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+);
+export const IconBolt = (p: IconProps) => (
+  <svg {...base(p)}><path d="M13 2 3 14h8l-1 8 10-12h-8l1-8Z" /></svg>
+);

@@ -8,6 +8,7 @@ import type {
   SnapshotLearn,
   SnapshotLearnLesson,
   SnapshotLearnStep,
+  SnapshotPost,
   SnapshotTemplate,
   SnapshotV2,
 } from "./types.ts";
@@ -221,12 +222,42 @@ export async function publishSnapshot(
     })),
   };
 
+  // Posts (D3) — blog articles + curated market briefs from the unified posts
+  // table (0035 + 0037). Published rows only, riding in the snapshot like learn
+  // so a content edit reaches devices on the next rebuild. Bodies are
+  // first-party (no copyright weight). Pinned first, newest first. The DB uses
+  // 0035's names (excerpt/cover_url/published); map to the app shape here.
+  const { data: postRows } = await db
+    .from("posts")
+    .select(
+      "slug,kind,title,excerpt,body,cover_url,author,tags,fund_id,company_id,pinned,reading_minutes,published_at",
+    )
+    .eq("published", true)
+    .order("pinned", { ascending: false })
+    .order("published_at", { ascending: false, nullsFirst: false });
+  const posts: SnapshotPost[] = (postRows ?? []).map((p) => ({
+    slug: p.slug,
+    kind: p.kind,
+    title: p.title,
+    summary: p.excerpt ?? null,
+    body: p.body ?? null,
+    hero_image_url: p.cover_url ?? null,
+    author: p.author ?? null,
+    tags: (p.tags as string[]) ?? [],
+    fund_id: p.fund_id ?? null,
+    company_id: p.company_id ?? null,
+    pinned: p.pinned ?? false,
+    reading_minutes: p.reading_minutes ?? null,
+    published_at: p.published_at ?? null,
+  }));
+
   const snapshot:
     & SnapshotV2
     & {
       composition: SnapshotComposition[];
       config: Record<string, unknown>;
       learn: SnapshotLearn;
+      posts: SnapshotPost[];
     } = {
     schema: 2,
     as_of: asOf,
@@ -241,6 +272,7 @@ export async function publishSnapshot(
     composition,
     config,
     learn,
+    posts,
   };
 
   const body = new TextEncoder().encode(JSON.stringify(snapshot));

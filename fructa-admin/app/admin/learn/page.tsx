@@ -53,11 +53,12 @@ export default async function LearnPage() {
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Learn</h1>
         <p className="mt-1 text-sm text-mute">
-          Author the in-app lessons. Units hold lessons hold steps
-          (explainer · interactive · quiz). Every save republishes the
-          snapshot — devices pick changes up on their next refresh, no app
-          release. A lesson can point at a fund to light up its live-rate badge
-          and the &ldquo;See it live&rdquo; hand-off.
+          Author Fructa&rsquo;s in-app lessons. Units hold lessons, lessons hold
+          steps (explainer · interactive · quiz). Drag the grip handle to reorder
+          anything; every save republishes the snapshot, so devices pick changes
+          up on their next refresh with no app release. Point a lesson at a fund
+          to light up its live-rate badge and the &ldquo;See it live&rdquo;
+          hand-off.
         </p>
       </header>
       <LearnImport />

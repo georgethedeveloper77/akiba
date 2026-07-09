@@ -9,9 +9,10 @@ import '../../data/providers.dart';
 import '../../data/snapshot_providers.dart';
 import '../backup/backup_ui.dart';
 import '../learn/learn_home_page.dart';
+import '../blog/blog_page.dart';
 import 'widgets/appearance_section.dart';
 
-/// v5 `.pg-settings` — flat rows from the kit, no cards. Sections: Learn
+/// v5 `.pg-settings` - flat rows from the kit, no cards. Sections: Learn
 /// (stub until D2, no fabricated streak/star stats), Notifications (master
 /// gates children AND drives the OneSignal subscription), Appearance
 /// (mode segmented + accent swatches), Security & data.
@@ -41,13 +42,21 @@ class SettingsPage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // ── Learn (D2 stub — honest copy, no fake streaks) ────────────
+            // ── Learn (D2 stub - honest copy, no fake streaks) ────────────
             LearnCard(
               title: cfg.string('learn.card.title', 'Learn'),
               subtitle: cfg.string('learn.card.subtitle',
                   'MMFs, gross vs net, why rates move'),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const LearnHomePage()),
+              ),
+            ),
+            LearnCard(
+              icon: Icons.menu_book_outlined,
+              title: 'Blog',
+              subtitle: 'Guides & market notes',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BlogPage()),
               ),
             ),
 
