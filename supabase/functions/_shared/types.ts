@@ -104,13 +104,40 @@ export interface SnapshotInsurer {
   name: string;
   company_id: string | null;
   currency: string;
-  plans: unknown;               // [{name, basis, price}]
+  plans: unknown;               // legacy named tiers; superseded by travel_regions
   min_premium: number | null;
   excess_pct: number | null;
   excess_min: number | null;
   claims_days: number | null;
   rating: number | null;
+  motor_rate: number | null;    // % of vehicle value (selected all along, was untyped)
+  benefits: string[];           // cover benefit chips (selected all along, was untyped)
   logo_domain: string | null;
+
+  // IN-3 detail surface (migration 0039).
+  settle_pct: number | null;
+  licensed_since: number | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  paybill: string | null;
+  website: string | null;
+  brand_color: string | null;
+  classes: { code: string; label: string }[] | null;
+  signals: { tag: string; label: string; text: string }[] | null;
+  travel_regions: { ea?: number; af?: number; ww?: number; sch?: number } | null;
+  travel_cover: string | null;
+}
+
+// Admin-managed grid on the Insure home (migration 0041). Motor and Travel
+// route to live comparison flows; other keys render as coming-soon cards.
+export interface SnapshotInsuranceType {
+  key: string;
+  label: string;
+  icon: string | null;   // material icon name, mapped app-side
+  status: string;        // 'live' | 'soon'
+  ord: number;
+  sub: string | null;    // optional static subtitle
 }
 
 export interface SnapshotFx {

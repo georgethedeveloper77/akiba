@@ -181,6 +181,31 @@ export async function updateFund(formData: FormData) {
   refresh(id);
 }
 
+// Field-scoped pricing writer (basis + NAV price fields). Touches ONLY these
+// four columns  like updateCustody/updateContact  so a yield fund's rate
+// stays with setRate and never rides here. Selecting yield/none clears the
+// price fields, so a fund flipped off NAV can't keep a stale unit price.
+const BASES = ["yield", "nav", "none"];
+export async function updatePricing(formData: FormData) {
+  const id = String(formData.get("id"));
+  if (!id) return;
+
+  const basisRaw = strOrNull(formData.get("basis"));
+  const basis = basisRaw && BASES.includes(basisRaw) ? basisRaw : "yield";
+  const isNav = basis === "nav";
+
+  const patch: Record<string, unknown> = {
+    basis,
+    price_per_unit: isNav ? numOrNull(formData.get("price_per_unit")) : null,
+    price_as_of: isNav ? strOrNull(formData.get("price_as_of")) : null,
+    distribution_pct: isNav ? numOrNull(formData.get("distribution_pct")) : null,
+  };
+
+  await supabaseAdmin().from("funds").update(patch).eq("id", id);
+  await republishSnapshot();
+  refresh(id);
+}
+
 // ── Bulk actions (called from the client table via useTransition) ────────────
 export async function bulkSetVerified(ids: string[], value: boolean) {
   if (!ids.length) return;

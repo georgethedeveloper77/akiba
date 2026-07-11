@@ -64,6 +64,20 @@ String _quarter(String asOf) {
   return 'Q${((d.month - 1) ~/ 3) + 1} ${d.year}';
 }
 
+const _moShort = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+// "10 Jul 2026" from an ISO date, or the raw string when unparseable. Used by
+// the NAV hero's "Priced as of" caption.
+String _dayMonth(String iso) {
+  final d = DateTime.tryParse(iso);
+  if (d == null) return iso;
+  return '${d.day} ${_moShort[d.month - 1]} ${d.year}';
+}
+
+
 /// v6 `.co` — company/fund detail. Carded sections (chart · performance ·
 /// manager CIS · credentials · composition · peers · terms) over a brand-tinted
 /// ambient glow, matched to the mockup, with the kit-based position/signals/
@@ -464,22 +478,38 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                           fontWeight: FontWeight.w600,
                           height: 1,
                         ),
-                        children: rate != null
+                        children: fund.showsYield
                             ? [
-                                TextSpan(
-                                    text: rate.toStringAsFixed(2),
-                                    style: const TextStyle(
-                                        fontSize: 46, letterSpacing: -1.5)),
-                                TextSpan(
-                                    text: fund.showsYield ? '% gross' : '%',
-                                    style: TextStyle(
-                                        fontSize: 18, color: c.muted)),
+                                if (rate != null) ...[
+                                  TextSpan(
+                                      text: rate.toStringAsFixed(2),
+                                      style: const TextStyle(
+                                          fontSize: 46, letterSpacing: -1.5)),
+                                  TextSpan(
+                                      text: '% gross',
+                                      style: TextStyle(
+                                          fontSize: 18, color: c.muted)),
+                                ] else
+                                  TextSpan(
+                                      text: t('common.dash'),
+                                      style: const TextStyle(
+                                          fontSize: 46, letterSpacing: -1.5)),
                               ]
                             : [
-                                TextSpan(
-                                    text: t('common.dash'),
-                                    style: const TextStyle(
-                                        fontSize: 46, letterSpacing: -1.5)),
+                                if (fund.pricePerUnit != null) ...[
+                                  TextSpan(
+                                      text: fund.pricePerUnit!.toStringAsFixed(2),
+                                      style: const TextStyle(
+                                          fontSize: 46, letterSpacing: -1.5)),
+                                  TextSpan(
+                                      text: ' / unit',
+                                      style: TextStyle(
+                                          fontSize: 18, color: c.muted)),
+                                ] else
+                                  TextSpan(
+                                      text: t('common.dash'),
+                                      style: const TextStyle(
+                                          fontSize: 46, letterSpacing: -1.5)),
                               ],
                       ),
                     ),
@@ -511,19 +541,42 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                 ),
               ),
 
-              // ── Triad: net / real / min ────────────────────────────────
+              // ── Priced as of (NAV funds only) ──────────────────────────
+              if (!fund.showsYield && fund.priceAsOf != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+                  child: Text(
+                    'Priced as of ${_dayMonth(fund.priceAsOf!)}',
+                    style: TextStyle(
+                        color: c.faint,
+                        fontFamily: fructaFonts.mono,
+                        fontSize: 11),
+                  ),
+                ),
+
+              // ── Triad: yield funds show net/real/min; NAV funds show
+              //    1Y return / distribution / min ─────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                child: _Triad(
-                  netLabel: fund.taxFree
-                      ? 'TAX-FREE'
-                      : 'NET (${cfg.whtPct.toStringAsFixed(0)}% WHT)',
-                  netValue: rate != null ? '${netPct.toStringAsFixed(2)}%' : '\u2014',
-                  real: fund.showsYield ? realPct : null,
-                  minValue: fund.minInvest != null
-                      ? '${fund.currency} ${_commas(fund.minInvest!)}'
-                      : '\u2014',
-                ),
+                child: fund.showsYield
+                    ? _Triad(
+                        netLabel: fund.taxFree
+                            ? 'TAX-FREE'
+                            : 'NET (${cfg.whtPct.toStringAsFixed(0)}% WHT)',
+                        netValue:
+                            rate != null ? '${netPct.toStringAsFixed(2)}%' : '\u2014',
+                        real: fund.showsYield ? realPct : null,
+                        minValue: fund.minInvest != null
+                            ? '${fund.currency} ${_commas(fund.minInvest!)}'
+                            : '\u2014',
+                      )
+                    : _TriadNav(
+                        oneYear: fund.return1y,
+                        distribution: fund.distributionPct,
+                        minValue: fund.minInvest != null
+                            ? '${fund.currency} ${_commas(fund.minInvest!)}'
+                            : '\u2014',
+                      ),
               ),
 
               // ── Rank vs same-type peers (context line) ─────────────────
@@ -546,12 +599,15 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
               // ── Risk profile — editorial band from fund_type ───────────
               _RiskBand(fund.fundType),
 
-              // ── Rate history (carded) ──────────────────────────────────
-              const SizedBox(height: 18),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _card(context, child: RateChart(fund.id, color: tint)),
-              ),
+              // ── Rate history (carded)  yield funds only. A NAV fund has no
+              //    yield series to plot; its price/returns show below. ──────
+              if (fund.showsYield) ...[
+                const SizedBox(height: 18),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _card(context, child: RateChart(fund.id, color: tint)),
+                ),
+              ],
 
               // ── Your position (.pos) — only when held. Sits right after the
               //    chart, before performance/projection, so a holder sees their
@@ -605,6 +661,8 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                         _Fact('Mgmt fee', '${fund.mgmtFee}% p.a.'),
                       if (fund.expenseRatio != null)
                         _Fact('Expense ratio', '${fund.expenseRatio}% p.a.'),
+                      if (fund.distributionPct != null)
+                        _Fact('Distribution', '${fund.distributionPct}% p.a.'),
                       _Fact(
                           'Tax',
                           fund.taxFree
@@ -1574,6 +1632,50 @@ class _Triad extends StatelessWidget {
               ? '${real! >= 0 ? '+' : ''}${real!.toStringAsFixed(2)}%'
               : '\u2014',
           color: real != null ? c.delta(real!) : null,
+        ),
+        divider(),
+        _TriadCell(k: 'MIN INVEST', v: minValue),
+      ],
+    );
+  }
+}
+
+// NAV variant of the triad: 1Y return / distribution / min invest. Same three
+// cells and styling as _Triad, with the yield concepts (net, real-vs-inflation)
+// swapped for what a priced fund reports. A dash where a value isn't seeded.
+class _TriadNav extends StatelessWidget {
+  const _TriadNav({
+    required this.oneYear,
+    required this.distribution,
+    required this.minValue,
+  });
+  final double? oneYear;
+  final double? distribution;
+  final String minValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    Widget divider() => Container(
+        width: 1,
+        height: 30,
+        margin: const EdgeInsets.symmetric(horizontal: 14),
+        color: c.line);
+    return Row(
+      children: [
+        _TriadCell(
+          k: '1Y RETURN',
+          v: oneYear != null
+              ? '${oneYear! >= 0 ? '+' : ''}${oneYear!.toStringAsFixed(2)}%'
+              : '\u2014',
+          color: oneYear != null ? c.delta(oneYear!) : null,
+        ),
+        divider(),
+        _TriadCell(
+          k: 'DISTRIBUTION',
+          v: distribution != null
+              ? '${distribution!.toStringAsFixed(2)}%'
+              : '\u2014',
         ),
         divider(),
         _TriadCell(k: 'MIN INVEST', v: minValue),

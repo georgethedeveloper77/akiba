@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { updateFund, setRate } from "../actions";
+import { FundPricing } from "../FundPricing";
 
 export const dynamic = "force-dynamic";
 
@@ -139,6 +140,14 @@ export default async function FundDetail({ params }: { params: Promise<{ id: str
               <p style={{ marginTop: 8, fontSize: 12, color: "var(--faint)" }}>Logged as a manual point and pushed to the app.</p>
             </div>
           </div>
+
+          <FundPricing
+            id={fund.id}
+            basis={fund.basis ?? null}
+            pricePerUnit={fund.price_per_unit ?? null}
+            priceAsOf={fund.price_as_of ?? null}
+            distributionPct={fund.distribution_pct ?? null}
+          />
 
           <div className="panelc">
             <div className="ph"><h3>History</h3><span className="sub">last 20</span></div>

@@ -185,7 +185,7 @@ class MarketsPage extends ConsumerWidget {
     final news = ref.watch(marketNewsProvider);
     final hasInsurers = ref
         .watch(insurersProvider)
-        .any((i) => i.hasMotor || i.plans.isNotEmpty);
+        .any((i) => i.hasMotor || i.hasTravel || i.plans.isNotEmpty);
     // Insurance is a later launch. Even if insurer data lands early, the
     // spotlight stays hidden until an admin flips insurance.launched
     // (App Store 2.1  no teasers for unlaunched features).

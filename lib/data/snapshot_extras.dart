@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'models/agent.dart';
 import 'models/company.dart';
 import 'models/fund_composition.dart';
+import 'models/insurance_type.dart';
 import 'models/insurer.dart';
 import 'models/learn.dart';
 import 'models/market_event.dart';
@@ -20,6 +21,7 @@ class SnapshotExtras {
   final List<MarketEvent> events;
   final Map<String, List<String>> templateBank; // key -> phrasings
   final List<Insurer> insurers;
+  final List<InsuranceType> insuranceTypes;
   final Map<String, double> _deltas; // fundId -> latest rate_change delta
   final Map<String, FundComposition> _composition; // fundId -> breakdown
   final RemoteConfig config; // V6 admin-editable copy/flags
@@ -35,6 +37,7 @@ class SnapshotExtras {
     required this.events,
     required this.templateBank,
     this.insurers = const [],
+    this.insuranceTypes = const [],
     required Map<String, double> deltas,
     Map<String, FundComposition> composition = const {},
     this.config = RemoteConfig.empty,
@@ -52,6 +55,7 @@ class SnapshotExtras {
     events: [],
     templateBank: {},
     insurers: [],
+    insuranceTypes: [],
     deltas: {},
     composition: {},
     config: RemoteConfig.empty,
@@ -113,6 +117,11 @@ class SnapshotExtras {
         .map((e) => Insurer.fromJson((e as Map).cast<String, dynamic>()))
         .toList();
 
+    final insuranceTypes = (m['insurance_types'] as List? ?? const [])
+        .map((e) =>
+            InsuranceType.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
+
     // Composition  sibling array keyed by fund_id (mirrors the deltas
     // pattern: fund model & rates path untouched).
     final composition = <String, FundComposition>{};
@@ -147,6 +156,7 @@ class SnapshotExtras {
       events: events,
       templateBank: bank,
       insurers: insurers,
+      insuranceTypes: insuranceTypes,
       deltas: deltas,
       composition: composition,
       config: RemoteConfig(

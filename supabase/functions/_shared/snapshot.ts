@@ -5,6 +5,7 @@ import type {
   SnapshotEvent,
   SnapshotFx,
   SnapshotInsurer,
+  SnapshotInsuranceType,
   SnapshotLearn,
   SnapshotLearnLesson,
   SnapshotLearnStep,
@@ -33,7 +34,8 @@ const FUND_FIELDS =
   "return_ytd,return_1y,return_3y,return_5y,bench_1y,bench_3y,bench_5y,best_month,worst_month,returns_as_of";
 
 const INSURER_FIELDS =
-  "id,name,company_id,currency,plans,min_premium,excess_pct,excess_min,claims_days,rating,motor_rate,benefits,logo_domain";
+  "id,name,company_id,currency,plans,min_premium,excess_pct,excess_min,claims_days,rating,motor_rate,benefits,logo_domain," +
+  "settle_pct,licensed_since,phone,whatsapp,email,paybill,website,brand_color,classes,signals,travel_regions,travel_cover";
 
 // Sibling composition array (migration 0017: funds.composition jsonb +
 // aum_kes + aum_as_of + composition_source_url). Keyed by fund_id and kept
@@ -176,6 +178,15 @@ export async function publishSnapshot(
       source_url: r.composition_source_url ?? null,
     }));
 
+  // Insurance types (0041) — admin-managed grid on the Insure home. Active,
+  // ordered. Motor and Travel route to live flows; other keys render as
+  // coming-soon cards until their pricing tables land.
+  const { data: insTypes } = await db
+    .from("insurance_types")
+    .select("key,label,icon,status,ord,sub")
+    .eq("active", true)
+    .order("ord", { ascending: true });
+
   // Learn (D2) — units → lessons → steps, nested for the app. Published in the
   // snapshot so a content edit reaches devices on the next rebuild (like config).
   const { data: lUnits } = await db
@@ -258,6 +269,7 @@ export async function publishSnapshot(
       config: Record<string, unknown>;
       learn: SnapshotLearn;
       posts: SnapshotPost[];
+      insurance_types: SnapshotInsuranceType[];
     } = {
     schema: 2,
     as_of: asOf,
@@ -273,6 +285,7 @@ export async function publishSnapshot(
     config,
     learn,
     posts,
+    insurance_types: (insTypes ?? []) as SnapshotInsuranceType[],
   };
 
   const body = new TextEncoder().encode(JSON.stringify(snapshot));

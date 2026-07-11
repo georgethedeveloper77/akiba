@@ -47,6 +47,14 @@ class Fund {
   final double? worstMonth; // worst monthly return, trailing 12 mo, %
   final String? returnsAsOf; // YYYY-MM-DD, fact-sheet month
 
+  // ── Priced (NAV) fields  the unit price a `basis == 'nav'` fund quotes
+  // instead of a yield (bond/equity/priced special), its as-of date, and an
+  // optional income distribution %. All null for a yield fund, so the detail
+  // page's yield path is untouched.
+  final double? pricePerUnit; // NAV per unit, in the fund's own currency
+  final String? priceAsOf; // YYYY-MM-DD, quote/fact-sheet date of the price
+  final double? distributionPct; // income distribution / interest %, e.g. 4.00
+
   /// C2  compact sparkline (≤20 trailing points) published inside the
   /// snapshot, so list tiles don't fetch per-fund history. Empty when the
   /// snapshot predates the field or the fund has <2 history points.
@@ -89,6 +97,9 @@ class Fund {
     this.bestMonth,
     this.worstMonth,
     this.returnsAsOf,
+    this.pricePerUnit,
+    this.priceAsOf,
+    this.distributionPct,
     this.spark = const [],
   });
 
@@ -130,6 +141,9 @@ class Fund {
     bestMonth: (j['best_month'] as num?)?.toDouble(),
     worstMonth: (j['worst_month'] as num?)?.toDouble(),
     returnsAsOf: j['returns_as_of'] as String?,
+    pricePerUnit: (j['price_per_unit'] as num?)?.toDouble(),
+    priceAsOf: j['price_as_of'] as String?,
+    distributionPct: (j['distribution_pct'] as num?)?.toDouble(),
     spark: ((j['spark'] as List?) ?? const [])
         .whereType<num>()
         .map((v) => v.toDouble())

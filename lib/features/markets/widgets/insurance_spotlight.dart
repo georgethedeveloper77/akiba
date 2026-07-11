@@ -5,7 +5,7 @@ import '../../../core/theme.dart';
 import '../../../data/models/insurer.dart';
 import '../../../data/snapshot_providers.dart';
 
-/// Insurance spotlight → Insure overlay. Pricing is pulled live from the
+/// Insurance spotlight, opens the Insure surface. Pricing is pulled live from the
 /// insurers directory (admin-controlled): cheapest motor floor, insurer count,
 /// and cheapest travel plan. Falls back to a generic line if pricing is absent.
 class InsuranceSpotlight extends ConsumerWidget {
@@ -35,11 +35,16 @@ class InsuranceSpotlight extends ConsumerWidget {
       final p = i.minPremium;
       if (p != null && (motorFrom == null || p < motorFrom!)) motorFrom = p;
     }
-    // cheapest travel plan across all insurers
+    // cheapest travel entry across all insurers: region base first, then any
+    // legacy named tiers, so the spotlight is correct under either model.
     num? travelFrom;
+    void consider(num? v) {
+      if (v != null && (travelFrom == null || v < travelFrom!)) travelFrom = v;
+    }
     for (final i in insurers) {
+      consider(i.travelFrom);
       for (final TravelPlan p in i.plans) {
-        if (travelFrom == null || p.price < travelFrom!) travelFrom = p.price;
+        consider(p.price);
       }
     }
     final n = insurers.length;

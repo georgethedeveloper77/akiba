@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'models/agent.dart';
 import 'models/company.dart';
 import 'models/fund_composition.dart';
+import 'models/insurance_type.dart';
 import 'models/insurer.dart';
 import 'models/learn.dart';
 import 'models/market_event.dart';
@@ -38,6 +39,13 @@ final marketEventsProvider = Provider<List<MarketEvent>>(
 final insurersProvider = Provider<List<Insurer>>(
   (ref) => ref.watch(snapshotExtrasProvider).insurers,
 );
+
+/// Admin-managed Insure home grid. Falls back to the baked Motor+Travel default
+/// when the snapshot carries none, so the grid renders before the first publish.
+final insuranceTypesProvider = Provider<List<InsuranceType>>((ref) {
+  final types = ref.watch(snapshotExtrasProvider).insuranceTypes;
+  return types.isEmpty ? InsuranceType.fallback : types;
+});
 
 /// Brand colour for a fund, via its company. Null until C1 data is present.
 final brandColorProvider = Provider.family<Color?, String>((ref, fundId) {
