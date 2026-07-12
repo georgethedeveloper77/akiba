@@ -408,7 +408,12 @@ class SlidingSegments<T> extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (_, box) {
-        final inner = box.maxWidth - 8; // 4px padding each side
+        // 8 for the 4px padding each side, PLUS 2 for the 1px border each side.
+        // Omitting the border was worth exactly 2.0 logical pixels, which is
+        // precisely what RenderFlex overflowed by: the children were sized
+        // against maxWidth - 8 while the Row only ever had maxWidth - 10 to
+        // put them in.
+        final inner = math.max(0.0, box.maxWidth - 10);
         final w = inner / n;
         return Container(
           padding: const EdgeInsets.all(4),
@@ -433,11 +438,15 @@ class SlidingSegments<T> extends StatelessWidget {
                   ),
                 ),
               ),
+              // Expanded, not SizedBox(width: w). The sliding pill still needs
+              // an absolute w to animate to, but the labels must divide the
+              // space they ACTUALLY get. If the padding or border ever changes
+              // again, the pill drifts by a pixel and nobody notices; a fixed
+              // width overflows and throws.
               Row(
                 children: [
                   for (final v in values)
-                    SizedBox(
-                      width: w,
+                    Expanded(
                       child: _Seg(
                         label: labelOf(v),
                         active: v == selected,

@@ -3,13 +3,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../data/models/learn.dart';
 import '../../data/snapshot_providers.dart';
 import 'learn_progress.dart';
 import 'lesson_player.dart';
 
-/// Learn home — matches fructa_learn_mock: "Money, decoded" header + streak/XP,
+/// Learn home - matches fructa_learn_mock: "Money, decoded" header + streak/XP,
 /// a level hero with a progress track, unit paths of ring nodes (done / active
 /// with a bob / locked) on a per-unit accent, and locked units teased as
 /// "Up next" cards. Lessons unlock in order; a unit unlocks when its
@@ -17,13 +18,15 @@ import 'lesson_player.dart';
 class LearnHomePage extends ConsumerWidget {
   const LearnHomePage({super.key});
 
-  static const _levelTitles = [
-    'Just getting started',
-    'Getting the basics',
-    'Rate reader',
-    'Yield savvy',
-    'Money master',
-  ];
+  /// Level names, lowest to highest. Not `const`: the copy comes from the
+  /// lang file, so it is resolved per build rather than baked in.
+  static List<String> get _levelTitles => [
+        t('learn.level1'),
+        t('learn.level2'),
+        t('learn.level3'),
+        t('learn.level4'),
+        t('learn.level5'),
+      ];
 
   LearnUnit? _unitById(LearnContent c, String? id) {
     if (id == null) return null;
@@ -113,14 +116,14 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('LEARN',
+                Text(t('learn.kicker'),
                     style: TextStyle(
                         color: c.faint,
                         fontSize: 11,
                         letterSpacing: 1.6,
                         fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
-                Text('Money, decoded',
+                Text(t('learn.title'),
                     style: TextStyle(
                         color: c.text,
                         fontSize: 23,
@@ -215,7 +218,11 @@ class _LevelHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('LEVEL ${level + 1} \u00b7 ${titles[level]}'.toUpperCase(),
+          Text(
+              t('learn.level', {
+                'n': '${level + 1}',
+                'title': titles[level],
+              }).toUpperCase(),
               style: TextStyle(
                   color: sky,
                   fontSize: 11,
@@ -537,7 +544,7 @@ class _UpNext extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('UP NEXT',
+          Text(t('learn.upNext'),
               style: TextStyle(
                   color: c.faint,
                   fontSize: 11,
@@ -617,13 +624,12 @@ class _Empty extends StatelessWidget {
               child: Icon(Icons.school_outlined, color: c.accent, size: 34),
             ),
             const SizedBox(height: 18),
-            Text('Lessons are on the way',
+            Text(t('learn.soonTitle'),
                 style: TextStyle(
                     color: c.text, fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(
-              'Short, plain-language lessons on MMFs, yields and tax — landing '
-              'here soon.',
+              t('learn.soonBody'),
               textAlign: TextAlign.center,
               style: TextStyle(color: c.muted, fontSize: 14, height: 1.5),
             ),

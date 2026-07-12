@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
-import '../../core/widgets/kit.dart';
 import '../../data/models/insurer.dart';
 import '../../data/snapshot_providers.dart';
 import 'insure_common.dart';
+import 'insure_motion.dart';
 import 'insurer_detail_page.dart';
 
 enum InsurerFilter { all, motor, travel, rated, flagged }
@@ -94,7 +94,10 @@ class _InsurerDirectoryPageState extends ConsumerState<InsurerDirectoryPage> {
         return a.name.compareTo(b.name);
       });
 
-    final priced = all.where((i) => i.hasMotor || i.hasTravel).length;
+
+    final rated = all.where((i) => i.financialRating != null).length;
+
+    final flaggedCount = all.where((i) => !i.canWriteNewBusiness).length;
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -103,6 +106,17 @@ class _InsurerDirectoryPageState extends ConsumerState<InsurerDirectoryPage> {
         surfaceTintColor: Colors.transparent,
         foregroundColor: c.text,
         elevation: 0,
+        title: Text(
+          t('insure.dir.title'),
+          style: TextStyle(
+            color: c.text,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.2,
+          ),
+        ),
+        centerTitle: false,
+        titleSpacing: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -113,20 +127,36 @@ class _InsurerDirectoryPageState extends ConsumerState<InsurerDirectoryPage> {
         onTap: () => FocusScope.of(context).unfocus(),
         child: Column(
           children: [
-            DisplayHeader(
-              title: t('insure.dir.title'),
-              sub: t('insure.dir.sub', {
-                'n': '${all.length}',
-                'priced': '$priced',
-              }),
-            ),
+            // The three numbers that justify the page existing. FLAGGED is the
+            // one nobody else in Kenya will show a retail buyer, so it is
+            // tinted red even at zero: it is the reason to scroll.
+            KpiStrip([
+              KpiCell(
+                label: t('insure.dir.kpiLicensed'),
+                value: '${all.length}',
+              ),
+              KpiCell(
+                label: t('insure.dir.kpiRated'),
+                value: '$rated',
+              ),
+              KpiCell(
+                label: t('insure.dir.kpiFlagged'),
+                value: '$flaggedCount',
+                color: flaggedCount > 0 ? c.down : null,
+              ),
+            ]),
             _SearchBox(
               controller: _search,
               onChanged: (v) => setState(() => _q = v),
             ),
-            _FilterPills(
-              filter: _filter,
-              onFilter: (f) => setState(() => _filter = f),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+              child: SlidingSegments<InsurerFilter>(
+                values: InsurerFilter.values,
+                selected: _filter,
+                labelOf: (f) => f.label,
+                onTap: (f) => setState(() => _filter = f),
+              ),
             ),
             Expanded(
               child: shown.isEmpty
@@ -143,6 +173,7 @@ class _InsurerDirectoryPageState extends ConsumerState<InsurerDirectoryPage> {
                       itemCount: shown.length,
                       itemBuilder: (_, k) => _InsurerRow(
                         insurer: shown[k],
+                        index: k,
                         onTap: () => _open(shown[k]),
                       ),
                     ),
@@ -197,143 +228,143 @@ class _SearchBox extends StatelessWidget {
   }
 }
 
-class _FilterPills extends StatelessWidget {
-  const _FilterPills({required this.filter, required this.onFilter});
-  final InsurerFilter filter;
-  final ValueChanged<InsurerFilter> onFilter;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 12, 8, 2),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (final f in InsurerFilter.values)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: GestureDetector(
-                  onTap: () => onFilter(f),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: f == filter ? c.text : c.s1,
-                      borderRadius: BorderRadius.circular(20),
-                      border:
-                          Border.all(color: f == filter ? c.text : c.line),
-                    ),
-                    child: Text(f.label,
-                        style: TextStyle(
-                            color: f == filter ? c.bg : c.muted,
-                            fontSize: 12.5,
-                            fontWeight: f == filter
-                                ? FontWeight.w600
-                                : FontWeight.w500)),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// One insurer: logo, name, what it offers, its rating, and a warning flag if
-/// the regulator has taken it over.
 class _InsurerRow extends StatelessWidget {
-  const _InsurerRow({required this.insurer, required this.onTap});
+  const _InsurerRow({
+    required this.insurer,
+    required this.onTap,
+    required this.index,
+  });
   final Insurer insurer;
   final VoidCallback onTap;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
     final c = context.c;
     final i = insurer;
     final flagged = !i.canWriteNewBusiness;
+    final rung = GradeScale.rungFor(i.financialRating);
 
     final tags = <String>[
       if (i.hasMotor) t('insure.motor'),
       if (i.hasTravel) t('insure.travel'),
     ];
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: c.line)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FundLogo(
-              domain: i.logoDomain,
-              seed: i.name,
-              size: 42,
-              brandColor: insurerBrand(context, i),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(i.name,
-                      style: TextStyle(
-                          color: c.text,
-                          fontSize: 13.5,
-                          height: 1.25,
-                          fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 5),
-                  Wrap(
-                    spacing: 5,
-                    runSpacing: 5,
-                    children: [
-                      if (flagged)
-                        _Tag(
-                          label: t('insure.dir.noNewBusiness'),
-                          fg: c.down,
-                          bg: c.down.withValues(alpha: 0.14),
+    return Stagger(
+      index: index,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: c.line)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // A red node on the mark itself, not just a tag further along the
+              // row. A reader scanning 38 logos should be able to spot the
+              // seized ones without reading a word.
+              SizedBox(
+                width: 42,
+                height: 42,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    InsurerLogo(i, size: 42),
+                    if (flagged)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          width: 13,
+                          height: 13,
+                          decoration: BoxDecoration(
+                            color: c.down,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: c.bg, width: 2),
+                          ),
                         ),
-                      for (final tag in tags)
-                        _Tag(
-                            label: tag,
-                            fg: c.accent,
-                            bg: c.accentSoft),
-                      if (tags.isEmpty && !flagged)
-                        _Tag(
-                          label: t('insure.dir.infoOnly'),
-                          fg: c.muted,
-                          bg: c.s3,
-                        ),
-                    ],
-                  ),
-                ],
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (i.financialRating != null)
-                  Text(i.financialRating!,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      i.name,
                       style: TextStyle(
+                        color: c.text,
+                        fontSize: 13.5,
+                        height: 1.25,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 5,
+                      children: [
+                        if (flagged)
+                          _Tag(
+                            label: t('insure.dir.noNewBusiness'),
+                            fg: c.down,
+                            bg: c.down.withValues(alpha: 0.14),
+                          ),
+                        for (final tag in tags)
+                          _Tag(label: tag, fg: c.accent, bg: c.accentSoft),
+                        if (tags.isEmpty && !flagged)
+                          _Tag(
+                            label: t('insure.dir.infoOnly'),
+                            fg: c.muted,
+                            bg: c.s3,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              // The grade as a position, not just letters. "AA+(KE)" means
+              // nothing to someone who has never read a GCR scale; seven rungs
+              // with five filled means "high" at a glance. An unrated insurer
+              // gets the word, never an empty ladder that would read as a bad
+              // score rather than an absent one.
+              SizedBox(
+                width: 62,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (i.financialRating != null) ...[
+                      Text(
+                        i.financialRating!,
+                        style: TextStyle(
                           color: c.text,
                           fontFamily: fructaFonts.mono,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700))
-                else
-                  Text(t('insure.dir.unrated'),
-                      style: TextStyle(color: c.faint, fontSize: 11)),
-                const SizedBox(height: 3),
-                Icon(Icons.chevron_right, size: 18, color: c.faint),
-              ],
-            ),
-          ],
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (rung != null) ...[
+                        const SizedBox(height: 5),
+                        GradeScale(filled: rung, color: c.up),
+                      ],
+                    ] else
+                      Text(
+                        t('insure.dir.unrated'),
+                        style: TextStyle(color: c.faint, fontSize: 10.5),
+                      ),
+                    const SizedBox(height: 5),
+                    Icon(Icons.chevron_right, size: 17, color: c.faint),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

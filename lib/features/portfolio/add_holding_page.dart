@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/category_colors.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/kit.dart';
 import '../../data/models/fund.dart';
@@ -11,17 +12,17 @@ import '../../data/providers.dart';
 import '../../data/snapshot_providers.dart';
 import '../../engine/projection_engine.dart';
 
-/// Add a holding — multi-step, on-device.
+/// Add a holding - multi-step, on-device.
 ///
-/// 1) Type   — big cards bucketed by `fund_type` × `currency` (authoritative,
+/// 1) Type   - big cards bucketed by `fund_type` × `currency` (authoritative,
 ///    never legacy `category`). MMF therefore splits into "Money market · KES"
 ///    and "Money market · USD", which is the whole reason for the type step.
 ///    Cards size to their content (IntrinsicHeight rows) so nothing overflows,
 ///    even at the largest text scale.
-/// 2) Fund   — a big search inside the chosen bucket that loads only the top 3
+/// 2) Fund   - a big search inside the chosen bucket that loads only the top 3
 ///    by rate until you type; every row carries the manager's real logo +
 ///    brand tint + its own sparkline + the live rate.
-/// 3) Balance — amount (thousands-grouped as you type) with a live growth
+/// 3) Balance - amount (thousands-grouped as you type) with a live growth
 ///    chart: what it becomes in a year, net of tax, at today's rate.
 ///
 /// Dark-mode contrast: surfaces use `s2`/`s3` (not `s1`) and borders use
@@ -35,14 +36,11 @@ class AddHoldingPage extends ConsumerStatefulWidget {
 typedef _Bucket = ({String type, String currency});
 
 const _typeOrder = ['mmf', 'fixed_income', 'equity', 'balanced', 'special'];
-const _typeLabels = {
-  'mmf': 'Money market',
-  'fixed_income': 'Fixed income',
-  'equity': 'Equity',
-  'balanced': 'Balanced',
-  'special': 'Special',
-};
-IconData _typeIcon(String t) => switch (t) {
+
+/// Display name for a `fund_type`. Falls back to the raw key for a type the
+/// lang file has not seen yet, rather than rendering blank.
+String _typeLabel(String type) => t('fundType.$type');
+IconData _typeIcon(String type) => switch (type) {
       'mmf' => Icons.savings_outlined,
       'fixed_income' => Icons.account_balance_outlined,
       'equity' => Icons.trending_up_rounded,
@@ -134,20 +132,20 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
       body: ListView(
         padding: const EdgeInsets.only(top: 4, bottom: 40),
         children: [
-          const DisplayHeader(
-            title: 'Add a holding',
-            sub: 'Stays on this device',
+          DisplayHeader(
+            title: t('portfolio.addHolding'),
+            sub: t('portfolio.add.sub'),
           ),
           const SizedBox(height: 14),
 
-          // ── Step 1 — Type (cards, bucketed by type × currency) ────────
-          _StepLabel(n: '1', label: 'Type'),
+          // ── Step 1 - Type (cards, bucketed by type × currency) ────────
+          _StepLabel(n: '1', label: t('portfolio.add.step1')),
           const SizedBox(height: 12),
           _typeGrid(buckets, active, retail),
           const SizedBox(height: 24),
 
-          // ── Step 2 — Fund (big search, top 3) ─────────────────────────
-          _StepLabel(n: '2', label: 'Fund'),
+          // ── Step 2 - Fund (big search, top 3) ─────────────────────────
+          _StepLabel(n: '2', label: t('portfolio.add.step2')),
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -156,7 +154,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
               onChanged: (v) => setState(() => _query = v),
               style: TextStyle(color: c.text, fontSize: 16),
               decoration: InputDecoration(
-                hintText: 'Search this type',
+                hintText: t('portfolio.add.search'),
                 hintStyle: TextStyle(color: c.muted, fontSize: 15),
                 prefixIcon: Icon(Icons.search, color: c.muted, size: 22),
                 suffixIcon: _query.isEmpty
@@ -188,7 +186,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
                 children: [
                   Icon(Icons.trending_up_rounded, size: 15, color: c.accent),
                   const SizedBox(width: 6),
-                  Text('Top rates',
+                  Text(t('portfolio.add.topRates'),
                       style: TextStyle(
                           color: c.muted,
                           fontSize: 10.5,
@@ -202,18 +200,18 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
               child: Text(
                 q.isEmpty
-                    ? 'No funds available in this type yet.'
-                    : 'No fund matches that. Try the manager\u2019s name.',
+                    ? t('portfolio.add.noneInType')
+                    : t('portfolio.add.noMatch'),
                 style: TextStyle(color: c.muted, fontSize: 13),
               ),
             )
           else
             for (final f in shown) _fundRow(f),
 
-          // ── Step 3 — Balance (appears once a fund is chosen) ──────────
+          // ── Step 3 - Balance (appears once a fund is chosen) ──────────
           if (_fund != null) ...[
             const SizedBox(height: 24),
-            _StepLabel(n: '3', label: 'Balance'),
+            _StepLabel(n: '3', label: t('portfolio.add.step3')),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -237,7 +235,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
                     textStyle: const TextStyle(
                         fontSize: 14.5, fontWeight: FontWeight.w700),
                   ),
-                  child: const Text('Add to portfolio'),
+                  child: Text(t('portfolio.add.cta')),
                 ),
               ),
             ),
@@ -247,7 +245,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
     );
   }
 
-  // ── Type grid — IntrinsicHeight rows so cards fit their content ───────
+  // ── Type grid - IntrinsicHeight rows so cards fit their content ───────
   Widget _typeGrid(List<_Bucket> buckets, _Bucket? active, List<Fund> retail) {
     final rows = <Widget>[];
     for (var i = 0; i < buckets.length; i += 2) {
@@ -283,8 +281,9 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
         .length;
     return _TypeCard(
       icon: _typeIcon(b.type),
-      title: _typeLabels[b.type] ?? b.type,
-      sub: '${b.currency} \u00b7 $n ${n == 1 ? 'fund' : 'funds'}',
+      title: _typeLabel(b.type),
+      sub: t(n == 1 ? 'portfolio.add.cardSubOne' : 'portfolio.add.cardSub',
+          {'ccy': b.currency, 'n': '$n'}),
       active: active != null && active.type == b.type && active.currency == b.currency,
       onTap: () => setState(() {
         _bucket = b;
@@ -293,7 +292,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
     );
   }
 
-  // ── Fund row — real logo + brand tint + sparkline + rate ──────────────
+  // ── Fund row - real logo + brand tint + sparkline + rate ──────────────
   Widget _fundRow(Fund f) {
     final c = context.c;
     final brand =
@@ -358,7 +357,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
     );
   }
 
-  // ── Balance section — field + live growth chart ───────────────────────
+  // ── Balance section - field + live growth chart ───────────────────────
   Widget _balanceSection(Fund f) {
     final c = context.c;
     final brand =
@@ -415,7 +414,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('IN A YEAR, NET OF TAX',
+                Text(t('portfolio.add.inYear'),
                     style: TextStyle(
                         color: c.muted,
                         fontFamily: fructaFonts.mono,
@@ -437,7 +436,10 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                          '+${money(f.currency, gain)} at ${rate.toStringAsFixed(2)}%',
+                          t('portfolio.add.gainAt', {
+                            'gain': money(f.currency, gain),
+                            'rate': rate.toStringAsFixed(2),
+                          }),
                           style: TextStyle(
                               color: c.up,
                               fontFamily: fructaFonts.mono,
@@ -452,7 +454,7 @@ class _AddHoldingPageState extends ConsumerState<AddHoldingPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'fructa tracks this daily from today. Illustration at today\u2019s rate held flat. Not a promise.',
+            t('portfolio.add.note'),
             style: TextStyle(color: c.muted, fontSize: 11, height: 1.4),
           ),
         ],

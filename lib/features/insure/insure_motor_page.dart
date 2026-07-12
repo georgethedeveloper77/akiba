@@ -9,10 +9,23 @@ import '../../core/widgets/kit.dart';
 import '../../data/models/insurer.dart';
 import '../../data/snapshot_providers.dart';
 import 'insure_common.dart';
+import 'insure_motion.dart';
 import 'insurer_detail_page.dart';
 import 'motor_cover_selector.dart';
 
 enum MotorSort { cheapest, claims, benefits, value }
+
+/// Labels for the sort segments. These lived inline in the old _FilterPills;
+/// SlidingSegments takes a labelOf callback, so they move onto the enum where
+/// the travel page's sort already keeps them.
+extension MotorSortX on MotorSort {
+  String get label => switch (this) {
+    MotorSort.cheapest => t('insure.filter.cheapest'),
+    MotorSort.claims => t('insure.filter.claims'),
+    MotorSort.benefits => t('insure.filter.benefits'),
+    MotorSort.value => t('insure.filter.value'),
+  };
+}
 
 const _kMinValue = 500000.0;
 const _kMaxValue = 15000000.0;
@@ -109,7 +122,28 @@ class _InsureMotorPageState extends ConsumerState<InsureMotorPage> {
         child: ListView(
         padding: const EdgeInsets.only(bottom: 36),
         children: [
-          DisplayHeader(title: t('insure.motor'), sub: rcText(cfg, 'insure.motorSub')),
+          // The three numbers this page exists to produce. The spread is the
+          // whole argument, so it leads, and it is computed from the SAME
+          // landed premiums the rows below show: the strip can never claim a
+          // gap the list then fails to display.
+          KpiStrip([
+            KpiCell(
+              label: t('insure.motor.kpiInsurers'),
+              value: '${sorted.length}',
+            ),
+            KpiCell(
+              label: t('insure.motor.kpiCheapest'),
+              value: kesCompact(landed(cheap)),
+              color: c.accent,
+            ),
+            KpiCell(
+              label: t('insure.motor.kpiSpread'),
+              value: gap <= 0
+                  ? '1.0x'
+                  : '${(landed(exp) / landed(cheap)).toStringAsFixed(1)}x',
+              color: gap > 0 ? c.down : null,
+            ),
+          ]),
           MotorCoverSelector(
             cls: _cls,
             cover: _cover,
@@ -138,27 +172,19 @@ class _InsureMotorPageState extends ConsumerState<InsureMotorPage> {
             child: Text(rcText(cfg, 'insure.indicativeNote'),
                 style: TextStyle(color: c.faint, fontSize: 10.5, height: 1.4)),
           ),
-          _FilterPills(sort: _sort, onSort: (s) => setState(() => _sort = s)),
-          const SizedBox(height: 4),
-          for (final i in sorted)
-            InsureQuoteRow(
-              name: i.name,
-              logoDomain: i.logoDomain,
-              brand: insurerBrand(context, i),
-              stars: i.rating,
-              meta: i.claimsDays == null
-                  ? t('insure.landedNote')
-                  : '${t('insure.claimsDays', {'d': '${i.claimsDays}'})}  \u00b7  ${t('insure.landedNote')}',
-              benefits: i.benefits,
-              priceText: kes(landed(i)),
-              subText: i.excessLabel.isEmpty
-                  ? null
-                  : t('insure.excessShort', {'v': i.excessLabel}),
-              best: i.id == best.id,
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => InsurerDetailPage.motor(i,
-                    value: _value, cls: _cls, cover: _cover),
-              )),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+            child: SlidingSegments<MotorSort>(
+              values: MotorSort.values,
+              selected: _sort,
+              labelOf: (s) => s.label,
+              onTap: (s) => setState(() => _sort = s),
+            ),
+          ),
+          for (var qi = 0; qi < sorted.length; qi++)
+            Stagger(
+              index: qi,
+              child: _quoteRow(context, sorted[qi], best, landed),
             ),
           InsureH2(t('insure.whyPriciest')),
           if (gap > 0)
@@ -187,6 +213,33 @@ class _InsureMotorPageState extends ConsumerState<InsureMotorPage> {
     );
   }
 
+
+  Widget _quoteRow(
+    BuildContext context,
+    Insurer i,
+    Insurer best,
+    double Function(Insurer) landed,
+  ) =>
+      InsureQuoteRow(
+              name: i.name,
+              logoDomain: i.logoDomain,
+              brand: insurerBrand(context, i),
+              stars: i.rating,
+              meta: i.claimsDays == null
+                  ? t('insure.landedNote')
+                  : '${t('insure.claimsDays', {'d': '${i.claimsDays}'})}  \u00b7  ${t('insure.landedNote')}',
+              benefits: i.benefits,
+              priceText: kes(landed(i)),
+              subText: i.excessLabel.isEmpty
+                  ? null
+                  : t('insure.excessShort', {'v': i.excessLabel}),
+              best: i.id == best.id,
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => InsurerDetailPage.motor(i,
+                    value: _value, cls: _cls, cover: _cover),
+              )),
+      );
+
   Widget _shell(fructaColors c, Widget body) => Scaffold(
         backgroundColor: c.bg,
         appBar: AppBar(
@@ -194,6 +247,17 @@ class _InsureMotorPageState extends ConsumerState<InsureMotorPage> {
           surfaceTintColor: Colors.transparent,
           foregroundColor: c.text,
           elevation: 0,
+          title: Text(
+            t('insure.motor'),
+            style: TextStyle(
+              color: c.text,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
+            ),
+          ),
+          centerTitle: false,
+          titleSpacing: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).maybePop(),
@@ -430,48 +494,3 @@ class _VehicleValueCardState extends State<_VehicleValueCard> {
   }
 }
 
-class _FilterPills extends StatelessWidget {
-  const _FilterPills({required this.sort, required this.onSort});
-  final MotorSort sort;
-  final ValueChanged<MotorSort> onSort;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    Widget pill(MotorSort s, String label) {
-      final on = s == sort;
-      return Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: GestureDetector(
-          onTap: () => onSort(s),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
-            decoration: BoxDecoration(
-              color: on ? c.text : c.s1,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: on ? c.text : c.line),
-            ),
-            child: Text(label,
-                style: TextStyle(
-                    color: on ? c.bg : c.muted,
-                    fontSize: 13,
-                    fontWeight: on ? FontWeight.w600 : FontWeight.w500)),
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 16, 8, 4),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(children: [
-          pill(MotorSort.cheapest, t('insure.filter.cheapest')),
-          pill(MotorSort.claims, t('insure.filter.claims')),
-          pill(MotorSort.benefits, t('insure.filter.benefits')),
-          pill(MotorSort.value, t('insure.filter.value')),
-        ]),
-      ),
-    );
-  }
-}

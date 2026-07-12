@@ -18,6 +18,7 @@ import '../compare/saved_comparisons_section.dart';
 import '../insure/insure_overlay.dart';
 import '../learn/learn_home_page.dart';
 import '../learn/learn_progress.dart';
+import '../stocks/stocks_page.dart';
 import 'markets_controller.dart';
 import 'search_overlay.dart';
 import 'widgets/best_fund_hero.dart';
@@ -28,6 +29,7 @@ import 'widgets/market_allocation_donut.dart';
 import 'widgets/market_context_card.dart';
 import 'widgets/money_currency_tabs.dart';
 import 'widgets/news_feed.dart';
+import 'widgets/stocks_spotlight.dart';
 import 'widgets/sort_pills.dart';
 import 'widgets/ticker_tape.dart';
 import 'widgets/yield_curve.dart';
@@ -262,6 +264,18 @@ class MarketsPage extends ConsumerWidget {
                               ),
                             ),
                           ),
+                        // Stocks. A card, not a rate tab: a stock has no
+                        // comparable headline rate to rank beside a yield.
+                        // Self-hides when the snapshot carries no stocks.
+                        SliverToBoxAdapter(
+                          child: StocksSpotlight(
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const StocksPage(),
+                              ),
+                            ),
+                          ),
+                        ),
                         if (!compareMode)
                           const SliverToBoxAdapter(
                             child: SavedComparisonsSection(),

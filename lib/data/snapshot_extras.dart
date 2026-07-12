@@ -9,6 +9,7 @@ import 'models/learn.dart';
 import 'models/market_event.dart';
 import 'models/post.dart';
 import 'models/remote_config.dart';
+import 'models/stock.dart';
 
 /// Everything in the v2 snapshot beyond `funds` (which keeps flowing through
 /// the existing RatesRepository → ratesProvider path unchanged). Parsed
@@ -27,6 +28,8 @@ class SnapshotExtras {
   final RemoteConfig config; // V6 admin-editable copy/flags
   final LearnContent learn; // D2 admin-authored learn content
   final List<Post> posts; // D3 blog posts (articles + briefs)
+  final List<Stock> stocks; // NSE-listed equities (0047)
+  final List<Broker> brokers; // CMA-licensed stockbrokers (0047)
   final DateTime? generatedAt; // snapshot publish time, for the "Updated" stamp
 
   const SnapshotExtras({
@@ -43,6 +46,8 @@ class SnapshotExtras {
     this.config = RemoteConfig.empty,
     this.learn = LearnContent.empty,
     this.posts = const [],
+    this.stocks = const [],
+    this.brokers = const [],
     this.generatedAt,
   }) : _deltas = deltas,
        _composition = composition;
@@ -141,6 +146,18 @@ class SnapshotExtras {
         .map((e) => Post.fromJson((e as Map).cast<String, dynamic>()))
         .toList();
 
+    // Stocks (0047). The price fields inside each Stock are null unless the
+    // publisher had `stocks.prices_enabled` on, so nothing here needs to know
+    // about the licence: an unlicensed snapshot simply carries no prices and
+    // Stock.hasPrice reads false all the way up the widget tree.
+    final stocks = (m['stocks'] as List? ?? const [])
+        .map((e) => Stock.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
+
+    final brokers = (m['brokers'] as List? ?? const [])
+        .map((e) => Broker.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
+
     final generatedAt = DateTime.tryParse(
       (m['generated_at'] ?? '') as String,
     )?.toLocal();
@@ -149,6 +166,8 @@ class SnapshotExtras {
       schema: 2,
       learn: learn,
       posts: posts,
+      stocks: stocks,
+      brokers: brokers,
       generatedAt: generatedAt,
       companies: companies,
       agents: agents,

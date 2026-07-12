@@ -7,9 +7,18 @@ import '../../core/widgets/kit.dart';
 import '../../data/models/insurer.dart';
 import '../../data/snapshot_providers.dart';
 import 'insure_common.dart';
+import 'insure_motion.dart';
 import 'insurer_detail_page.dart';
 
 enum TravelSort { cheapest, cover, claims }
+
+extension TravelSortX on TravelSort {
+  String get label => switch (this) {
+    TravelSort.cheapest => t('insure.filter.cheapest'),
+    TravelSort.cover => t('insure.filter.cover'),
+    TravelSort.claims => t('insure.filter.claims'),
+  };
+}
 
 class InsureTravelPage extends ConsumerStatefulWidget {
   const InsureTravelPage({super.key});
@@ -81,7 +90,21 @@ class _InsureTravelPageState extends ConsumerState<InsureTravelPage> {
       ListView(
         padding: const EdgeInsets.only(bottom: 36),
         children: [
-          DisplayHeader(title: t('insure.travel'), sub: rcText(rc, 'insure.travelSub')),
+          KpiStrip([
+            KpiCell(
+              label: t('insure.motor.kpiInsurers'),
+              value: '${sorted.length}',
+            ),
+            KpiCell(
+              label: t('insure.motor.kpiCheapest'),
+              value: best == null ? '' : kesCompact(_price(best)),
+              color: c.accent,
+            ),
+            KpiCell(
+              label: t('insure.travel.kpiTrip'),
+              value: t('insure.days', {'n': '$_days'}),
+            ),
+          ]),
           _TravelBox(
             region: _region,
             days: _days,
@@ -90,10 +113,30 @@ class _InsureTravelPageState extends ConsumerState<InsureTravelPage> {
             onDays: _bumpDays,
             onPax: _bumpPax,
           ),
-          _FilterPills(sort: _sort, onSort: (s) => setState(() => _sort = s)),
-          const SizedBox(height: 4),
-          for (final i in sorted)
-            InsureQuoteRow(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+            child: SlidingSegments<TravelSort>(
+              values: TravelSort.values,
+              selected: _sort,
+              labelOf: (s) => s.label,
+              onTap: (s) => setState(() => _sort = s),
+            ),
+          ),
+          for (var qi = 0; qi < sorted.length; qi++)
+            Stagger(
+              index: qi,
+              child: _quoteRow(context, sorted[qi], best),
+            ),
+          _TravelFoot(sorted: sorted, region: _region, price: _price),
+          Disclaimer(rcText(rc, 'insure.disc.travel')),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _quoteRow(BuildContext context, Insurer i, Insurer? best) =>
+      InsureQuoteRow(
               name: i.name,
               logoDomain: i.logoDomain,
               brand: insurerBrand(context, i),
@@ -118,13 +161,7 @@ class _InsureTravelPageState extends ConsumerState<InsureTravelPage> {
                   pax: _pax,
                 ),
               )),
-            ),
-          _TravelFoot(sorted: sorted, region: _region, price: _price),
-          Disclaimer(rcText(rc, 'insure.disc.travel')),
-        ],
-      ),
-    );
-  }
+      );
 
   Widget _shell(fructaColors c, Widget body) => Scaffold(
         backgroundColor: c.bg,
@@ -133,6 +170,17 @@ class _InsureTravelPageState extends ConsumerState<InsureTravelPage> {
           surfaceTintColor: Colors.transparent,
           foregroundColor: c.text,
           elevation: 0,
+          title: Text(
+            t('insure.travel'),
+            style: TextStyle(
+              color: c.text,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.2,
+            ),
+          ),
+          centerTitle: false,
+          titleSpacing: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).maybePop(),
@@ -284,50 +332,6 @@ class _Stepper extends StatelessWidget {
   }
 }
 
-class _FilterPills extends StatelessWidget {
-  const _FilterPills({required this.sort, required this.onSort});
-  final TravelSort sort;
-  final ValueChanged<TravelSort> onSort;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    Widget pill(TravelSort s, String label) {
-      final on = s == sort;
-      return Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: GestureDetector(
-          onTap: () => onSort(s),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 9),
-            decoration: BoxDecoration(
-              color: on ? c.text : c.s1,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: on ? c.text : c.line),
-            ),
-            child: Text(label,
-                style: TextStyle(
-                    color: on ? c.bg : c.muted,
-                    fontSize: 13,
-                    fontWeight: on ? FontWeight.w600 : FontWeight.w500)),
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 16, 8, 4),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(children: [
-          pill(TravelSort.cheapest, t('insure.filter.cheapest')),
-          pill(TravelSort.cover, t('insure.filter.cover')),
-          pill(TravelSort.claims, t('insure.filter.claims')),
-        ]),
-      ),
-    );
-  }
-}
 
 class _TravelFoot extends StatelessWidget {
   const _TravelFoot(

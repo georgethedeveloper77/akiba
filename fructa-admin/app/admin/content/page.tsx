@@ -8,13 +8,16 @@ export default async function ContentPage() {
   const { data: pages } = await db.from("pages").select("slug,title,body,updated_at").order("slug");
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-6xl">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Pages</h1>
-        <p className="mt-1 text-sm text-mute">
-          The website&apos;s static legal and company pages. Edits publish to fructa.africa on save.
-          Body fields accept Markdown. Articles and briefs live in{" "}
-          <a href="/admin/blog" className="text-gold hover:underline">Blog</a>.
+        <p className="mt-1 max-w-[70ch] text-sm text-mute">
+          The website&apos;s legal and company pages. Markdown in, fructa.africa out, and saving
+          publishes immediately. Articles and briefs live in{" "}
+          <a href="/admin/blog" className="text-gold hover:underline">
+            Blog
+          </a>
+          .
         </p>
       </header>
       <ContentClient pages={(pages ?? []) as PageRow[]} />

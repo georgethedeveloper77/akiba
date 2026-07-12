@@ -10,6 +10,7 @@ import 'models/learn.dart';
 import 'models/market_event.dart';
 import 'models/post.dart';
 import 'models/remote_config.dart';
+import 'models/stock.dart';
 import 'providers.dart';
 import 'snapshot_extras.dart';
 
@@ -120,6 +121,26 @@ final snapshotUpdatedProvider = Provider<DateTime?>(
   (ref) => ref.watch(snapshotExtrasProvider).generatedAt,
 );
 
+/// Hosted logo for an INSURER, resolved through its company exactly as
+/// [logoUrlProvider] does for a fund.
+///
+/// This was the whole logo bug: every insure surface passed only `logoDomain`
+/// to FundLogo and never a `logoUrl`, so an insurer whose company has a real
+/// mark in the `logos` bucket still fell through to a monogram. Insurers are
+/// rows in `funds`, so they carry `company_id` like any other row; nothing was
+/// resolving it.
+///
+/// Null is a legitimate answer: the 29 insurers seeded straight off the IRA
+/// register have no logo and no verified domain, and a monogram is the correct
+/// rendering for them. It beats showing another company's mark.
+final insurerLogoUrlProvider = Provider.family<String?, String?>((
+  ref,
+  companyId,
+) {
+  if (companyId == null) return null;
+  return ref.watch(companiesProvider)[companyId]?.logoUrl;
+});
+
 /// Agents attached to a company, plus free agents.
 final agentsForCompanyProvider = Provider.family<List<Agent>, String?>((
   ref,
@@ -130,4 +151,39 @@ final agentsForCompanyProvider = Provider.family<List<Agent>, String?>((
   return agents
       .where((a) => a.isFree || a.companyIds.contains(companyId))
       .toList();
+});
+
+// ── Stocks (0047) ───────────────────────────────────────────────────────────
+
+/// NSE-listed equities from the snapshot. Empty until the snapshot carries any,
+/// so the Stocks surface shows its empty state rather than a fabricated list.
+final stocksProvider = Provider<List<Stock>>(
+  (ref) => ref.watch(snapshotExtrasProvider).stocks,
+);
+
+final stockByIdProvider = Provider.family<Stock?, String>((ref, id) {
+  for (final s in ref.watch(stocksProvider)) {
+    if (s.id == id) return s;
+  }
+  return null;
+});
+
+/// CMA-licensed brokers for the "Where to buy" section. Fructa routes out to
+/// these and never places a trade.
+final brokersProvider = Provider<List<Broker>>(
+  (ref) => ref.watch(snapshotExtrasProvider).brokers,
+);
+
+/// Whether the snapshot carries licensed NSE prices.
+///
+/// This is derived from the DATA, not from a local flag: the publisher only
+/// emits price fields when `stocks.prices_enabled` is on, so if no stock has a
+/// price, the app has no licensed price to show and every price surface hides
+/// itself. That means the app can never display market data the backend did not
+/// license, even if a build shipped with the price widgets compiled in.
+final stockPricesLiveProvider = Provider<bool>((ref) {
+  for (final s in ref.watch(stocksProvider)) {
+    if (s.hasPrice) return true;
+  }
+  return false;
 });

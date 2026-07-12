@@ -9,6 +9,7 @@ import '../../data/models/agent.dart';
 import '../../data/models/insurer.dart';
 import '../../data/snapshot_providers.dart';
 import 'insure_common.dart';
+import 'insurer_reviews.dart';
 import 'insurer_trust_panel.dart';
 
 class InsurerDetailPage extends ConsumerWidget {
@@ -112,6 +113,8 @@ class InsurerDetailPage extends ConsumerWidget {
         .toList()
       ..sort((a, b) => a.amount.compareTo(b.amount));
 
+    final shownPrice = isTravel ? travelPrice : motorLanded;
+
     return Scaffold(
       backgroundColor: c.bg,
       appBar: AppBar(
@@ -119,11 +122,45 @@ class InsurerDetailPage extends ConsumerWidget {
         surfaceTintColor: Colors.transparent,
         foregroundColor: c.text,
         elevation: 0,
+        title: Text(
+          shortInsurerName(i.name),
+          style: TextStyle(
+            color: c.text,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.2,
+          ),
+        ),
+        centerTitle: false,
+        titleSpacing: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
       ),
+
+      // The price follows you down the page.
+      //
+      // The premium sits at the top, but the trust panel, the peer ranking, the
+      // agents and the reviews are all BELOW it, and they are exactly the things
+      // that decide whether someone acts. By the time a reader has finished them
+      // the number is a full screen behind, and asking them to scroll back up to
+      // act is asking them not to.
+      //
+      // Absent for an unpriced insurer, since a bar reading "Get a quote" with
+      // no quote behind it is a lie. Those get an official-site link only, in
+      // the body.
+      bottomNavigationBar: isInfo || shownPrice <= 0
+          ? null
+          : _StickyQuoteBar(
+              price: shownPrice,
+              label: isTravel
+                  ? t('insure.getTravelQuote')
+                  : t('insure.getQuote'),
+              tint: brand,
+              onTap: () => _primaryAction(i),
+            ),
+
       body: ListView(
         padding: const EdgeInsets.only(bottom: 40),
         children: [
@@ -132,11 +169,7 @@ class InsurerDetailPage extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
             child: Row(
               children: [
-                FundLogo(
-                    domain: i.logoDomain,
-                    seed: i.name,
-                    size: 44,
-                    brandColor: brand),
+                InsurerLogo(i, size: 44),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -295,20 +328,29 @@ class InsurerDetailPage extends ConsumerWidget {
               ),
           ],
 
-          CtaFull(
-            label: isTravel
-                ? t('insure.getTravelQuote')
-                : t('insure.getQuote'),
-            tint: brand,
-            icon: Icons.north_east,
-            onTap: () => _primaryAction(i),
-          ),
+          // Only when the sticky bar is NOT carrying it. Two identical gold
+          // buttons a thumb apart is a bug, not emphasis.
+          if (isInfo || shownPrice <= 0)
+            CtaFull(
+              label: isTravel
+                  ? t('insure.getTravelQuote')
+                  : t('insure.getQuote'),
+              tint: brand,
+              icon: Icons.north_east,
+              onTap: () => _primaryAction(i),
+            ),
           if (i.website != null)
             CtaGhost(
               label: t('insure.officialSite'),
               icon: Icons.language,
               onTap: () => openWeb(i.website!),
             ),
+          // Reviews sit BELOW the trust panel, below the price, and below the
+          // quote CTA. That order is the argument: a GCR rating and a
+          // stranger's opinion are different kinds of thing. Facts rank,
+          // opinions colour. Reviews never touch the sort order of a quote and
+          // never feed the trust panel.
+          InsurerReviews(i),
           Disclaimer(rcText(cfg, 'insure.disc.detail')),
         ],
       ),
@@ -666,13 +708,21 @@ class _ContactGrid extends StatelessWidget {
       child: Column(
         children: [
           if (tiles.isNotEmpty)
-            GridView.count(
-              crossAxisCount: 2,
+            // A fixed main-axis extent, NOT childAspectRatio. Aspect ratio
+            // derives cell height from cell width, so the height changed with
+            // screen size and could not account for the 32px icon tile plus
+            // 22px of padding: that is the 4px bottom overflow. 62 clears the
+            // 54px content box with headroom for the 1.3x text scale.
+            GridView(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 9,
-              crossAxisSpacing: 9,
-              childAspectRatio: 3.3,
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 9,
+                crossAxisSpacing: 9,
+                mainAxisExtent: 62,
+              ),
               children: tiles,
             ),
           if (i.website != null) ...[
@@ -747,6 +797,8 @@ class _ContactTile extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
@@ -766,6 +818,99 @@ class _ContactTile extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The quote bar pinned to the foot of an insurer page.
+///
+/// Carries the live premium, so the number and the action are never separated
+/// by a scroll. Frosted rather than opaque: the content sliding under it is a
+/// cue that there is more page, which a solid slab would hide.
+class _StickyQuoteBar extends StatelessWidget {
+  const _StickyQuoteBar({
+    required this.price,
+    required this.label,
+    required this.tint,
+    required this.onTap,
+  });
+
+  final double price;
+  final String label;
+  final Color tint;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bg.withValues(alpha: 0.94),
+        border: Border(top: BorderSide(color: c.line)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+          child: Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    t('insure.yourPremium'),
+                    style: TextStyle(
+                      color: c.faint,
+                      fontSize: 9,
+                      letterSpacing: 0.8,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    kes(price),
+                    style: TextStyle(
+                      color: c.text,
+                      fontFamily: fructaFonts.mono,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: TextButton(
+                  onPressed: onTap,
+                  style: TextButton.styleFrom(
+                    backgroundColor: tint,
+                    foregroundColor: c.inkOn(tint),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(label),
+                      const SizedBox(width: 7),
+                      const Icon(Icons.north_east, size: 15),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

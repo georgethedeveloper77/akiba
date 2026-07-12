@@ -233,3 +233,83 @@ export interface SnapshotPost {
   reading_minutes: number | null;
   published_at: string | null;
 }
+
+// ── Stocks (0047) ───────────────────────────────────────────────────────────
+// NSE-listed equities. Deliberately NOT modelled as funds: a stock has a
+// ticker, a dividend stream and (optionally) a price, not a yield.
+//
+// LICENCE NOTE. Everything in the "facts" block below comes from public company
+// filings and announcements and always publishes. The "price block" is NSE
+// market data and is subject to an NSE redistribution licence. The snapshot
+// builder emits those fields ONLY when the app_config key
+// `stocks.prices_enabled` is true. When it is false every price field is null,
+// the app hides the price cells, and Fructa redistributes no market data.
+
+export interface SnapshotStockDividend {
+  financial_year: number;
+  kind: string;                 // interim | final | special
+  dps_kes: number;              // dividend per share, KES
+  payment_date: string | null;
+  source_url: string | null;
+}
+
+export interface SnapshotStock {
+  // Facts. Public. Always published.
+  id: string;
+  ticker: string;               // e.g. 'SCOM'
+  name: string;
+  sector: string | null;
+  segment: string | null;       // MIM | AIM | GEMS
+  about: string | null;
+  logo_url: string | null;
+  brand_color: string | null;
+  website: string | null;
+  ir_url: string | null;
+  listed_on: string | null;
+  shares_outstanding: number | null;
+
+  // Dividends. Public. Always published.
+  dividends: SnapshotStockDividend[];
+  dps_latest: number | null;    // sum of all kinds in the most recent FY
+  dps_year: number | null;      // that FY
+
+  // Price block. LICENCE GATED. All null when stocks.prices_enabled is false.
+  close_kes: number | null;
+  prev_close: number | null;
+  change_pct: number | null;
+  price_as_of: string | null;
+  market_cap: number | null;    // close x shares_outstanding
+  div_yield: number | null;     // dps_latest / close, % (needs a price)
+  spark: number[] | null;
+}
+
+// CMA-licensed stockbrokers. Fructa routes users out to these and never
+// executes a trade itself, so this is a directory, not an order path.
+export interface SnapshotBroker {
+  id: string;
+  name: string;
+  license_no: string | null;
+  blurb: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  app_url: string | null;
+  logo_url: string | null;
+}
+
+// A price adapter is the only place that knows an NSE feed's shape. Mirrors
+// SourceAdapter. Rows are keyed by ticker; mapping happens upstream.
+export interface StockPriceRow {
+  ticker: string;
+  close: number;
+  prevClose?: number;
+  high?: number;
+  low?: number;
+  volume?: number;
+  asOf?: string;                // YYYY-MM-DD; overrides the run date
+}
+
+export interface StockPriceAdapter {
+  id: string;
+  fetchRows(): Promise<StockPriceRow[]>;
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/i18n.dart';
 import '../../core/push.dart';
 import '../../core/settings_prefs.dart';
 import '../../core/theme.dart';
@@ -36,37 +37,38 @@ class SettingsPage extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.only(top: 4, bottom: 120),
           children: [
-            const DisplayHeader(
-              title: 'Settings',
-              sub: 'No account needed \u00b7 everything on this device',
+            DisplayHeader(
+              title: t('settings.title'),
+              sub: t('settings.sub'),
             ),
             const SizedBox(height: 16),
 
             // ── Learn (D2 stub - honest copy, no fake streaks) ────────────
             LearnCard(
-              title: cfg.string('learn.card.title', 'Learn'),
-              subtitle: cfg.string('learn.card.subtitle',
-                  'MMFs, gross vs net, why rates move'),
+              title: cfg.string('learn.card.title', t('settings.learn.title')),
+              subtitle: cfg.string(
+                  'learn.card.subtitle', t('settings.learn.subtitle')),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const LearnHomePage()),
               ),
             ),
             LearnCard(
               icon: Icons.menu_book_outlined,
-              title: 'Blog',
-              subtitle: 'Guides & market notes',
+              title: t('settings.blog.title'),
+              subtitle: t('settings.blog.subtitle'),
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const BlogPage()),
               ),
             ),
 
-            const SectionHeader(
-                title: 'Notifications', trailing: 'on by default'),
+            SectionHeader(
+                title: t('settings.notifications'),
+                trailing: t('settings.notif.trailing')),
             const SizedBox(height: 4),
             SettingsRow(
               icon: Icons.notifications_none,
-              title: 'Push notifications',
-              sub: 'Master switch',
+              title: t('settings.notif.master'),
+              sub: t('settings.notif.masterSub'),
               trailing: fructaToggle(
                 value: master,
                 onChanged: (v) {
@@ -80,30 +82,30 @@ class SettingsPage extends ConsumerWidget {
               child: Column(children: [
                 SettingsRow(
                   icon: Icons.trending_up,
-                  title: 'Rate moves',
-                  sub: 'Followed funds past \u00b1 0.15 pts',
+                  title: t('settings.notif.rateMoves'),
+                  sub: t('settings.notif.rateMovesSub'),
                   trailing: fructaToggle(
                       value: prefs.rateMoves, onChanged: ctrl.setRateMoves),
                 ),
                 SettingsRow(
                   icon: Icons.swap_horiz,
-                  title: 'Saved comparisons',
-                  sub: 'When the leader flips or the gap moves > 0.25 pts',
+                  title: t('settings.notif.saved'),
+                  sub: t('settings.notif.savedSub'),
                   trailing: fructaToggle(
                       value: prefs.savedComparisons,
                       onChanged: ctrl.setSavedComparisons),
                 ),
                 SettingsRow(
                   icon: Icons.paid_outlined,
-                  title: 'Coupons & maturities',
+                  title: t('settings.notif.coupons'),
                   trailing: fructaToggle(
                       value: prefs.couponsMaturities,
                       onChanged: ctrl.setCouponsMaturities),
                 ),
                 SettingsRow(
                   icon: Icons.newspaper_outlined,
-                  title: 'Weekly digest',
-                  sub: 'Fridays',
+                  title: t('settings.notif.digest'),
+                  sub: t('settings.notif.digestSub'),
                   showDivider: false,
                   trailing: fructaToggle(
                       value: prefs.weeklyDigest,
@@ -112,18 +114,18 @@ class SettingsPage extends ConsumerWidget {
               ]),
             ),
 
-            const SectionHeader(title: 'Appearance'),
+            SectionHeader(title: t('settings.appearance')),
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 12, 20, 4),
               child: AppearanceSection(),
             ),
 
-            const SectionHeader(title: 'Security & data'),
+            SectionHeader(title: t('settings.security')),
             const SizedBox(height: 4),
             SettingsRow(
               icon: Icons.lock_outline,
-              title: 'Face ID / Touch ID',
-              sub: 'Require unlock to open fructa',
+              title: t('settings.security.biometric'),
+              sub: t('settings.security.biometricSub'),
               trailing: fructaToggle(
                 value: lockOn,
                 onChanged: (v) {
@@ -134,29 +136,28 @@ class SettingsPage extends ConsumerWidget {
             ),
             SettingsRow(
               icon: Icons.visibility_off_outlined,
-              title: 'Hide balances',
-              sub: 'Mask amounts across the app',
+              title: t('settings.security.hideBalances'),
+              sub: t('settings.security.hideBalancesSub'),
               trailing: fructaToggle(
                   value: prefs.hideBalances,
                   onChanged: ctrl.setHideBalances),
             ),
             SettingsRow(
               icon: Icons.cloud_upload_outlined,
-              title: 'Back up portfolio',
-              sub: 'Recovery code \u00b7 restore on any device',
+              title: t('settings.data.backup'),
+              sub: t('settings.data.backupSub'),
               onTap: () => showBackupSheet(context, ref),
             ),
             SettingsRow(
               icon: Icons.settings_backup_restore,
-              title: 'Restore from backup',
-              sub: 'Enter a code from another phone',
+              title: t('settings.data.restore'),
+              sub: t('settings.data.restoreSub'),
               showDivider: false,
               onTap: () => showRestoreSheet(context, ref),
             ),
 
-            const Disclaimer(
-              'fructa \u00b7 v1.0 \u00b7 rates from licensed sources, '
-              'timestamped & traceable',
+            Disclaimer(
+              t('settings.disclaimer'),
               center: true,
             ),
           ],

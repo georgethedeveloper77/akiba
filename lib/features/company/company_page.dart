@@ -78,7 +78,7 @@ String _dayMonth(String iso) {
 }
 
 
-/// v6 `.co` — company/fund detail. Carded sections (chart · performance ·
+/// v6 `.co` - company/fund detail. Carded sections (chart · performance ·
 /// manager CIS · credentials · composition · peers · terms) over a brand-tinted
 /// ambient glow, matched to the mockup, with the kit-based position/signals/
 /// agents/CTAs preserved.
@@ -115,7 +115,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
   }
 
   // Follow this fund (add-only), opt the device into push, and raise the OS
-  // permission prompt — the same path Settings/onboarding use.
+  // permission prompt - the same path Settings/onboarding use.
   Future<void> _enableNotifs() async {
     await ref.read(subscriptionsProvider.notifier).ensureFollow(fund.id);
     Push.setEnabled(true);
@@ -162,7 +162,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Stay on top of this fund',
+                            t('company.coach.title'),
                             style: TextStyle(
                                 color: c.text,
                                 fontSize: 17,
@@ -173,9 +173,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Turn on notifications and fructa will alert you when this '
-                      'fund\u2019s rate moves. You can manage alerts anytime in '
-                      'Settings.',
+                      t('company.coach.body'),
                       style: TextStyle(
                           color: c.muted, fontSize: 13.5, height: 1.5),
                     ),
@@ -185,20 +183,20 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
               const SizedBox(height: 6),
               CtaFull(
                 icon: Icons.notifications_active,
-                label: 'Turn on notifications',
+                label: t('company.coach.cta'),
                 tint: tint,
                 onTap: () async {
                   Navigator.of(sheetCtx).pop();
                   await _enableNotifs();
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Alerts on for this fund.')),
+                    SnackBar(content: Text(t('company.coach.on'))),
                   );
                 },
               ),
               CtaGhost(
                 icon: Icons.close,
-                label: 'Not now',
+                label: t('common.notNow'),
                 onTap: () => Navigator.of(sheetCtx).pop(),
               ),
               const SizedBox(height: 12),
@@ -241,7 +239,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
   String? _bestContact(List<Agent> agents, Company? m) {
     String digitsOf(String? s) => (s ?? '').replaceAll(RegExp(r'[^0-9]'), '');
 
-    // 1. WhatsApp open-link — agent, then company.
+    // 1. WhatsApp open-link - agent, then company.
     for (final a in agents) {
       final d = digitsOf(a.phone);
       if (a.whatsapp && d.isNotEmpty) return 'https://wa.me/$d';
@@ -249,7 +247,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
     final cwa = digitsOf(m?.whatsapp);
     if (cwa.isNotEmpty) return 'https://wa.me/$cwa';
 
-    // 2. Phone dialer — agent, then company.
+    // 2. Phone dialer - agent, then company.
     for (final a in agents) {
       if (a.phone != null && a.phone!.isNotEmpty) return 'tel:${a.phone}';
     }
@@ -314,7 +312,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
       return parts.isEmpty ? 'No lock-in, no exit fee' : parts.join(' \u00b7 ');
     }
 
-    // Rank among same-type, same-currency retail peers on net yield — the same
+    // Rank among same-type, same-currency retail peers on net yield - the same
     // basis as the peer bars below. Null when it can't be ranked meaningfully.
     int? fundRank;
     var rankTotal = 0;
@@ -564,18 +562,18 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                             ? 'TAX-FREE'
                             : 'NET (${cfg.whtPct.toStringAsFixed(0)}% WHT)',
                         netValue:
-                            rate != null ? '${netPct.toStringAsFixed(2)}%' : '\u2014',
+                            rate != null ? '${netPct.toStringAsFixed(2)}%' : t('common.dash'),
                         real: fund.showsYield ? realPct : null,
                         minValue: fund.minInvest != null
                             ? '${fund.currency} ${_commas(fund.minInvest!)}'
-                            : '\u2014',
+                            : t('common.dash'),
                       )
                     : _TriadNav(
                         oneYear: fund.return1y,
                         distribution: fund.distributionPct,
                         minValue: fund.minInvest != null
                             ? '${fund.currency} ${_commas(fund.minInvest!)}'
-                            : '\u2014',
+                            : t('common.dash'),
                       ),
               ),
 
@@ -596,7 +594,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                   label: _benchLabels[fund.benchmarkKey] ?? 'benchmark',
                 ),
 
-              // ── Risk profile — editorial band from fund_type ───────────
+              // ── Risk profile - editorial band from fund_type ───────────
               _RiskBand(fund.fundType),
 
               // ── Rate history (carded)  yield funds only. A NAV fund has no
@@ -609,7 +607,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                 ),
               ],
 
-              // ── Your position (.pos) — only when held. Sits right after the
+              // ── Your position (.pos) - only when held. Sits right after the
               //    chart, before performance/projection, so a holder sees their
               //    own money first. ────────────────────────────────────────
               if (held != null) ...[
@@ -621,7 +619,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
               // ── Trailing performance vs benchmark (Bucket B) ───────────
               if (fund.hasReturns) FundPerformance(fund, tint: tint),
 
-              // ── Project your returns — reuses ProjectionEngine ─────────
+              // ── Project your returns - reuses ProjectionEngine ─────────
               _ProjectionSection(fund, tint: tint),
 
               // ── Manager · CMA CIS position ─────────────────────────────
@@ -641,13 +639,13 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                 ),
               ],
 
-              // ── Credentials — age + independent custody (trust strip) ──
+              // ── Credentials - age + independent custody (trust strip) ──
               FundCredentials(fund, manager),
 
-              // ── What the fund holds — donut + legend + provenance ──────
+              // ── What the fund holds - donut + legend + provenance ──────
               if (fc != null) CompositionPie(fc),
 
-              // ── Vs category leaders — net-yield bars (carded widget) ───
+              // ── Vs category leaders - net-yield bars (carded widget) ───
               PeerCompare(fund, tint: tint),
 
               // ── Terms ──────────────────────────────────────────────────
@@ -731,7 +729,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
 
   // ── Position → kit PositionBlock. Accrues from the holding's own lot dates
   //    via PortfolioMath, so it reads the SAME grown value as the Portfolio
-  //    tab — not the static entry balance. ───────────────────────────────
+  //    tab - not the static entry balance. ───────────────────────────────
   static const _posMonths = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
@@ -779,7 +777,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
   // ── Agent → kit AgentRow ──────────────────────────────────────────────
   Widget _agentRow(Agent a, Color tint, bool divider) {
     final digits = (a.phone ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-    // Sub-line shows the role only — the phone number is reached via the call /
+    // Sub-line shows the role only - the phone number is reached via the call /
     // WhatsApp buttons, not displayed as text.
     return AgentRow(
       name: a.name,
@@ -1034,7 +1032,7 @@ class _BenchmarkLine extends StatelessWidget {
   }
 }
 
-/// Editorial risk band derived purely from `fund_type` — no stored data. A
+/// Editorial risk band derived purely from `fund_type` - no stored data. A
 /// four-step gauge (lower → higher) filled up to the fund's level on a
 /// green→gold→red ramp, plus a plain one-line characterisation. The ramp is
 /// lerped from the theme's own semantic tokens (`up` → `accent` → `down`), so
@@ -1055,31 +1053,27 @@ class _RiskBand extends StatelessWidget {
       : Color.lerp(c.accent, c.down, (t - 0.5) / 0.5)!;
 
   // fund_type → (level 1..4, label, one-line note). Omitted types → no band.
-  static ({int level, String label, String note})? _spec(String? t) =>
-      switch (t) {
+  static ({int level, String label, String note})? _spec(String? type) =>
+      switch (type) {
         'mmf' => (
             level: 1,
-            label: 'Low',
-            note: 'Capital-stable and highly liquid. Returns track '
-                'short-term interest rates.',
+            label: t('company.risk.low'),
+            note: t('company.risk.mmfNote'),
           ),
         'fixed_income' => (
             level: 2,
-            label: 'Low to medium',
-            note: 'Mostly bonds and fixed deposits. Priced day to day but '
-                'capital-oriented.',
+            label: t('company.risk.lowMed'),
+            note: t('company.risk.fixedIncomeNote'),
           ),
         'balanced' => (
             level: 3,
-            label: 'Medium',
-            note: 'Blends equities and fixed income, so the value can rise '
-                'and fall.',
+            label: t('company.risk.med'),
+            note: t('company.risk.balancedNote'),
           ),
         'equity' => (
             level: 4,
-            label: 'High',
-            note: 'Mostly listed shares. Higher long-run potential with '
-                'larger swings.',
+            label: t('company.risk.high'),
+            note: t('company.risk.equityNote'),
           ),
         _ => null,
       };
@@ -1107,7 +1101,7 @@ class _RiskBand extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('RISK PROFILE',
+                Text(t('company.risk.title'),
                     style: TextStyle(
                         color: c.faint,
                         fontFamily: fructaFonts.mono,
@@ -1144,14 +1138,14 @@ class _RiskBand extends StatelessWidget {
             const SizedBox(height: 7),
             Row(
               children: [
-                Text('Lower risk',
+                Text(t('company.risk.lower'),
                     style: TextStyle(
                         color: c.faint,
                         fontFamily: fructaFonts.mono,
                         fontSize: 8.5,
                         letterSpacing: 0.4)),
                 const Spacer(),
-                Text('Higher risk',
+                Text(t('company.risk.higher'),
                     style: TextStyle(
                         color: c.faint,
                         fontFamily: fructaFonts.mono,
@@ -1169,11 +1163,11 @@ class _RiskBand extends StatelessWidget {
   }
 }
 
-/// "Project your returns" — a fund-specific forward projection reusing
+/// "Project your returns" - a fund-specific forward projection reusing
 /// [ProjectionEngine]. Initial prefills from `fund.minInvest`; the top-up and
 /// horizon sliders drive a live monthly-compounded value, growth line, and an
 /// honest ledger. The management fee is shown as informational (it's already
-/// inside the published yield), never a deduction; only WHT is subtracted —
+/// inside the published yield), never a deduction; only WHT is subtracted -
 /// and for tax-free funds even that row becomes a "Tax-free" note. Rendered
 /// only for funds that quote a yield and have a rate.
 class _ProjectionSection extends StatefulWidget {
@@ -1288,7 +1282,7 @@ class _ProjectionSectionState extends State<_ProjectionSection> {
                 const SizedBox(height: 14),
                 _sliderRow(
                   c,
-                  label: 'Monthly top-up',
+                  label: t('company.proj.topUp'),
                   valueText: kes(_topUp),
                   slider: Slider(
                     value: _topUp,
@@ -1300,7 +1294,7 @@ class _ProjectionSectionState extends State<_ProjectionSection> {
                 ),
                 _sliderRow(
                   c,
-                  label: 'Horizon',
+                  label: t('company.proj.horizon'),
                   valueText: _horizonLabel(_months),
                   slider: Slider(
                     value: _months.toDouble(),
@@ -1378,7 +1372,10 @@ class _ProjectionSectionState extends State<_ProjectionSection> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Manager fee ${fund.mgmtFee}% p.a. is already reflected in the ${rate.toStringAsFixed(2)}% yield \u2014 it isn\u2019t charged on top.',
+                    t('company.proj.feeNote', {
+                      'fee': '${fund.mgmtFee}',
+                      'rate': rate.toStringAsFixed(2),
+                    }),
                     style: TextStyle(
                         color: c.faint, fontSize: 11, height: 1.4),
                   ),
@@ -1404,10 +1401,12 @@ class _ProjectionSectionState extends State<_ProjectionSection> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Initial amount',
+              Text(t('company.proj.initial'),
                   style: TextStyle(color: c.muted, fontSize: 11.5)),
               if (widget.fund.minInvest != null)
-                Text('min ${money(cur, widget.fund.minInvest!)}',
+                Text(
+                    t('company.proj.min',
+                        {'amt': money(cur, widget.fund.minInvest!)}),
                     style: TextStyle(
                         color: c.faint,
                         fontFamily: fructaFonts.mono,
@@ -1452,7 +1451,8 @@ class _ProjectionSectionState extends State<_ProjectionSection> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text('earning ${rate.toStringAsFixed(2)}%',
+                Text(t('company.proj.earning',
+                        {'rate': rate.toStringAsFixed(2)}),
                     style: TextStyle(
                         color: c.faint,
                         fontFamily: fructaFonts.mono,
@@ -1630,7 +1630,7 @@ class _Triad extends StatelessWidget {
           k: 'REAL VS INFL.',
           v: real != null
               ? '${real! >= 0 ? '+' : ''}${real!.toStringAsFixed(2)}%'
-              : '\u2014',
+              : t('common.dash'),
           color: real != null ? c.delta(real!) : null,
         ),
         divider(),
@@ -1667,7 +1667,7 @@ class _TriadNav extends StatelessWidget {
           k: '1Y RETURN',
           v: oneYear != null
               ? '${oneYear! >= 0 ? '+' : ''}${oneYear!.toStringAsFixed(2)}%'
-              : '\u2014',
+              : t('common.dash'),
           color: oneYear != null ? c.delta(oneYear!) : null,
         ),
         divider(),
@@ -1675,7 +1675,7 @@ class _TriadNav extends StatelessWidget {
           k: 'DISTRIBUTION',
           v: distribution != null
               ? '${distribution!.toStringAsFixed(2)}%'
-              : '\u2014',
+              : t('common.dash'),
         ),
         divider(),
         _TriadCell(k: 'MIN INVEST', v: minValue),
@@ -1741,15 +1741,15 @@ class _Stat3 extends StatelessWidget {
       children: [
         _StatCell(
             k: 'MANAGER AUM',
-            v: aum != null ? FundComposition.kesShort(aum!) : '\u2014'),
+            v: aum != null ? FundComposition.kesShort(aum!) : t('common.dash')),
         divider(),
         _StatCell(
             k: 'RANK',
-            v: rank != null ? '#$rank / $rankTotal' : '\u2014'),
+            v: rank != null ? '#$rank / $rankTotal' : t('common.dash')),
         divider(),
         _StatCell(
             k: 'MARKET SHARE',
-            v: share != null ? '${share!.toStringAsFixed(1)}%' : '\u2014'),
+            v: share != null ? '${share!.toStringAsFixed(1)}%' : t('common.dash')),
       ],
     );
   }

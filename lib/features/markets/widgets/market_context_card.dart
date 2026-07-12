@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/i18n.dart';
 import '../../../core/series_colors.dart';
 import '../../../core/theme.dart';
 import '../../../data/models/fund.dart';
@@ -79,8 +80,10 @@ class MarketContextCard extends ConsumerWidget {
     final avgNet = nets.reduce((a, b) => a + b) / nets.length;
     final diff = avgNet - inflation;
     final beating = diff >= 0;
-    final verdict =
-        '${beating ? 'Yes' : 'No'} \u00b7 ${diff >= 0 ? '+' : '\u2212'}${diff.abs().toStringAsFixed(1)}pp avg';
+    final verdict = t('markets.context.verdict', {
+      'yn': beating ? t('common.yes') : t('common.no'),
+      'gap': '${diff >= 0 ? '+' : '\u2212'}${diff.abs().toStringAsFixed(1)}',
+    });
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 30, 16, 0),
@@ -88,7 +91,7 @@ class MarketContextCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'MARKET CONTEXT',
+            t('markets.context.kicker'),
             style: TextStyle(
               color: c.faint,
               fontFamily: fructaFonts.mono,
@@ -112,7 +115,7 @@ class MarketContextCard extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Are MMFs beating inflation?',
+                        t('markets.context.title'),
                         style: TextStyle(
                           color: c.text,
                           fontSize: 14,
@@ -143,8 +146,7 @@ class MarketContextCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Average retail MMF net yield vs the 91-day T-bill and '
-                  'headline inflation, last $n marks.',
+                  t('markets.context.sub', {'n': '$n'}),
                   style: TextStyle(color: c.muted, fontSize: 11.5),
                 ),
                 const SizedBox(height: 12),
@@ -162,11 +164,17 @@ class MarketContextCard extends ConsumerWidget {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    _Legend(color: seriesColor(0), label: 'MMF avg'),
+                    _Legend(
+                        color: seriesColor(0),
+                        label: t('markets.context.legendMmf')),
                     const SizedBox(width: 14),
-                    _Legend(color: seriesColor(1), label: 'T-bill 91d'),
+                    _Legend(
+                        color: seriesColor(1),
+                        label: t('markets.context.legendTbill')),
                     const SizedBox(width: 14),
-                    _Legend(color: c.down, label: 'Inflation'),
+                    _Legend(
+                        color: c.down,
+                        label: t('markets.context.legendInflation')),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -174,12 +182,16 @@ class MarketContextCard extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _Bench(label: 'INFLATION', value: cfg.inflationPct),
-                    _Div(),
-                    _Bench(label: 'CBR', value: cfg.cbrPct),
+                    _Bench(
+                        label: t('markets.context.benchInflation'),
+                        value: cfg.inflationPct),
                     _Div(),
                     _Bench(
-                      label: '91-DAY',
+                        label: t('markets.context.benchCbr'),
+                        value: cfg.cbrPct),
+                    _Div(),
+                    _Bench(
+                      label: t('markets.context.benchTbill91'),
                       value: cfg.tbill91Pct,
                       accent: true,
                     ),

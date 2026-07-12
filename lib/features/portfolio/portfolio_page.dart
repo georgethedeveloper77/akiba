@@ -8,6 +8,7 @@ import '../../app/main_scaffold.dart';
 import '../../core/categories.dart';
 import '../../core/category_colors.dart';
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/settings_prefs.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/kit.dart';
@@ -21,12 +22,12 @@ import 'add_holding_page.dart';
 import 'manage_holding_sheet.dart';
 import 'projection_card.dart';
 
-/// Portfolio — markets-first, consolidated in KES.
+/// Portfolio - markets-first, consolidated in KES.
 ///
 /// Revamp: the old top bar (Add button + avatar) is gone; adding lives inside
 /// the holdings card and the empty state. Hide-balances (the persisted V5 pref,
 /// shared with Settings) now sits on the total it protects. Sections read as
-/// discrete cards — hero, allocation, holdings — for a calmer, terminal-like
+/// discrete cards - hero, allocation, holdings - for a calmer, terminal-like
 /// hierarchy. Each holding accrues from the date its lot was added (WHT unless
 /// tax-free); USD converts at the snapshot's CBK rate; the hero trend is built
 /// from the real accrual trajectory, so pre-purchase days read zero.
@@ -139,7 +140,7 @@ class _Full extends ConsumerWidget {
         .toSet()
         .length;
 
-    // Hero trend — 31 daily samples of the whole book's accrued KES value.
+    // Hero trend - 31 daily samples of the whole book's accrued KES value.
     final trend = [
       for (var i = 30; i >= 0; i--) _totalAt(now.subtract(Duration(days: i))),
     ];
@@ -168,13 +169,15 @@ class _Full extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 8, bottom: 100),
       children: [
         DisplayHeader(
-          title: 'Portfolio',
-          sub:
-              '${holdings.length} holdings \u00b7 $providers providers \u00b7 consolidated in KES',
+          title: t('portfolio.title'),
+          sub: t('portfolio.summary', {
+            'holdings': '${holdings.length}',
+            'providers': '$providers',
+          }),
         ),
         const SizedBox(height: 6),
 
-        // ── Hero — total (count-up), gain, trend; eye lives here ──────────
+        // ── Hero - total (count-up), gain, trend; eye lives here ──────────
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
           child: _HeroCard(
@@ -262,22 +265,27 @@ class _Full extends ConsumerWidget {
           ),
         ),
 
-        // pf run-rate — forward earning at the current blended net yield
+        // pf run-rate - forward earning at the current blended net yield
         EarnStrip([
-          EarnCell('Earning / day', '+${bal(money('KES', dailyKes.round()))}'),
-          EarnCell('/ month', '+${bal(money('KES', monthlyKes.round()))}'),
-          EarnCell('/ year', '+${bal(money('KES', yearlyKes.round()))}'),
+          EarnCell(t('portfolio.earnDay'),
+              '+${bal(money('KES', dailyKes.round()))}'),
+          EarnCell(t('portfolio.earnMonth'),
+              '+${bal(money('KES', monthlyKes.round()))}'),
+          EarnCell(t('portfolio.earnYear'),
+              '+${bal(money('KES', yearlyKes.round()))}'),
         ]),
 
         if (slices.isNotEmpty) ...[
-          const SectionHeader(title: 'Allocation'),
+          SectionHeader(title: t('portfolio.allocation')),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 2, 20, 0),
             child: _AllocationCard(slices: slices, total: allocTotal),
           ),
         ],
 
-        const SectionHeader(title: 'Holdings', trailing: 'accrued value shown'),
+        SectionHeader(
+            title: t('portfolio.holdings'),
+            trailing: t('portfolio.holdingsTrailing')),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
           child: _HoldingsCard(
@@ -302,7 +310,7 @@ class _Full extends ConsumerWidget {
         ),
 
         if (totalKes > 0 && blendedGross > 0) ...[
-          const SectionHeader(title: 'If you keep investing'),
+          SectionHeader(title: t('portfolio.projection')),
           ProjectionCard(
             principal: totalKes,
             grossRate: blendedGross,
@@ -310,12 +318,7 @@ class _Full extends ConsumerWidget {
           ),
         ],
 
-        Disclaimer(
-          "Values are estimates: each holding grows daily at the fund's net "
-          "yield from the date you added it. USD positions earn their own USD "
-          "yield and convert at the CBK indicative rate for the total. Not a "
-          'promise, and fructa never holds your money.',
-        ),
+        Disclaimer(t('portfolio.disclaimer')),
       ],
     );
   }
@@ -333,7 +336,7 @@ class _Full extends ConsumerWidget {
   );
 }
 
-// ── Hero card shell — s2 fill + line2 border + faint accent wash ─────────────
+// ── Hero card shell - s2 fill + line2 border + faint accent wash ─────────────
 class _HeroCard extends StatelessWidget {
   const _HeroCard({required this.child});
   final Widget child;
@@ -360,7 +363,7 @@ class _HeroCard extends StatelessWidget {
   }
 }
 
-// ── Eye toggle (hide balances) — the only survivor of the old top bar ───────
+// ── Eye toggle (hide balances) - the only survivor of the old top bar ───────
 class _EyeToggle extends ConsumerWidget {
   const _EyeToggle({required this.hidden});
   final bool hidden;
@@ -405,7 +408,7 @@ class _HoldingsCard extends StatelessWidget {
   }
 }
 
-// ── Allocation — donut + valued legend, boxed for dark-mode contrast ─────────
+// ── Allocation - donut + valued legend, boxed for dark-mode contrast ─────────
 class _AllocationCard extends StatelessWidget {
   const _AllocationCard({required this.slices, required this.total});
   final List<AllocSlice> slices;
@@ -657,7 +660,7 @@ class _TrendChart extends StatelessWidget {
   }
 }
 
-// ── Holding tile — real logo + brand accent bar ─────────────────────────────
+// ── Holding tile - real logo + brand accent bar ─────────────────────────────
 class _HoldingRow extends ConsumerWidget {
   const _HoldingRow({
     required this.holding,
@@ -902,7 +905,7 @@ class _Empty extends ConsumerWidget {
         ),
         const SizedBox(height: 20),
         Text(
-          'Your portfolio is empty',
+          t('portfolio.empty'),
           textAlign: TextAlign.center,
           style: TextStyle(
             color: c.text,
@@ -912,20 +915,19 @@ class _Empty extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Add what you already hold and Fructa shows your real balance, daily '
-          'earnings and projections all in one place.',
+          t('portfolio.emptyBody'),
           textAlign: TextAlign.center,
           style: TextStyle(color: c.muted, fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 24),
         CtaFull(
-          label: 'Add your first investment',
+          label: t('portfolio.emptyCta'),
           onTap: () => Navigator.of(
             context,
           ).push(MaterialPageRoute(builder: (_) => const AddHoldingPage())),
         ),
         CtaGhost(
-          label: 'Browse top rates',
+          label: t('portfolio.emptyCta2'),
           onTap: () => ref.read(selectedTabProvider.notifier).state = 0,
         ),
       ],

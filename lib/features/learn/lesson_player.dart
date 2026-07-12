@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../data/models/fund.dart';
 import '../../data/models/learn.dart';
@@ -327,7 +328,7 @@ class _InteractiveState extends State<_Interactive> {
                             fontFamily: fructaFonts.mono,
                             fontSize: 28,
                             fontWeight: FontWeight.w700)),
-                    Text('kept after tax \u00b7 1 year',
+                    Text(t('lesson.keptAfterTax'),
                         style: TextStyle(color: c.faint, fontSize: 11.5)),
                   ]),
                   Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -337,7 +338,7 @@ class _InteractiveState extends State<_Interactive> {
                             fontFamily: fructaFonts.mono,
                             fontSize: 17,
                             fontWeight: FontWeight.w700)),
-                    Text('you put in',
+                    Text(t('lesson.youPutIn'),
                         style: TextStyle(color: c.faint, fontSize: 11.5)),
                   ]),
                 ],
@@ -377,7 +378,7 @@ class _QuizViewState extends State<_QuizView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('QUICK CHECK',
+        Text(t('lesson.quickCheck'),
             style: TextStyle(
                 color: c.faint,
                 fontSize: 10.5,
@@ -513,6 +514,12 @@ class _WinView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.c;
+    // Hoisted: `fund` is a public instance field, so Dart will not promote it
+    // to non-nullable inside the button's conditional.
+    final f = fund;
+    final seeLiveLabel = f != null
+        ? t('lesson.seeLive', {'name': f.name})
+        : t('lesson.seeLiveGeneric');
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 10, 24, 20),
       child: Column(
@@ -529,22 +536,23 @@ class _WinView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('+${lesson.xp}',
+                Text(t('lesson.xpPlus', {'n': '${lesson.xp}'}),
                     style: TextStyle(
                         color: c.text,
                         fontFamily: fructaFonts.mono,
                         fontSize: 28,
                         fontWeight: FontWeight.w700)),
-                Text('XP', style: TextStyle(color: c.muted, fontSize: 11)),
+                Text(t('lesson.xp'),
+                    style: TextStyle(color: c.muted, fontSize: 11)),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          Text('Lesson complete',
+          Text(t('lesson.complete'),
               style: TextStyle(
                   color: c.text, fontSize: 24, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Text('Nicely done. Your streak is at $streak.',
+          Text(t('lesson.completeBody', {'n': '$streak'}),
               textAlign: TextAlign.center,
               style: TextStyle(color: c.muted, fontSize: 14, height: 1.5)),
           const SizedBox(height: 16),
@@ -558,7 +566,7 @@ class _WinView extends StatelessWidget {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(Icons.local_fire_department_rounded, size: 16, color: c.up),
               const SizedBox(width: 8),
-              Text('$streak-day streak',
+              Text(t('lesson.streak', {'n': '$streak'}),
                   style: TextStyle(
                       color: c.up,
                       fontFamily: fructaFonts.mono,
@@ -573,7 +581,7 @@ class _WinView extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: onSeeLive,
                 icon: const Icon(Icons.north_east_rounded, size: 18),
-                label: Text('See ${fund?.name ?? 'it'} live'),
+                label: Text(seeLiveLabel),
                 style: FilledButton.styleFrom(
                   backgroundColor: c.accent,
                   foregroundColor: c.onAccent,
@@ -597,7 +605,7 @@ class _WinView extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Back to path'),
+                child: Text(t('lesson.backToPath')),
               ),
             ),
           ] else
@@ -614,7 +622,7 @@ class _WinView extends StatelessWidget {
                   textStyle:
                       const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-                child: const Text('Back to path'),
+                child: Text(t('lesson.backToPath')),
               ),
             ),
         ],
@@ -985,7 +993,7 @@ class _GrowthView extends StatelessWidget {
                   interval: 1,
                   getTitlesWidget: (v, meta) => Padding(
                     padding: const EdgeInsets.only(top: 6),
-                    child: Text('Y${v.toInt()}',
+                    child: Text(t('lesson.chartYear', {'n': '${v.toInt()}'}),
                         style: TextStyle(color: c.faint, fontSize: 10)),
                   ),
                 ),

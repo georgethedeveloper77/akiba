@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import type {
   SnapshotAgent,
+  SnapshotBroker,
   SnapshotCompany,
   SnapshotEvent,
   SnapshotFx,
@@ -10,6 +11,8 @@ import type {
   SnapshotLearnLesson,
   SnapshotLearnStep,
   SnapshotPost,
+  SnapshotStock,
+  SnapshotStockDividend,
   SnapshotTemplate,
   SnapshotV2,
 } from "./types.ts";
@@ -262,6 +265,145 @@ export async function publishSnapshot(
     published_at: p.published_at ?? null,
   }));
 
+  // Stocks (0047) - NSE-listed equities.
+  //
+  // TWO CLASSES OF FIELD, and the split is the whole point:
+  //
+  //   facts + dividends  public company filings and announcements. Always
+  //                      published, no gate.
+  //   price block        NSE market data, subject to an NSE redistribution
+  //                      licence. Published ONLY when app_config
+  //                      `stocks.prices_enabled` is true.
+  //
+  // With the gate off, every price field serialises as null and the app hides
+  // the price cells, so a stock page still works as a dividend + how-to-buy
+  // surface while Fructa redistributes no market data. Flipping the config key
+  // (after a licence is in place) lights the cells up with no app release.
+  const pricesEnabled = config["stocks.prices_enabled"] === true;
+
+  const { data: stockRows } = await db
+    .from("stocks")
+    .select(
+      "id,ticker,name,sector,segment,about,logo_url,brand_color,website,ir_url,listed_on,shares_outstanding",
+    )
+    .eq("active", true)
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
+
+  // Dividends, newest first. Grouped per stock; the latest financial year's
+  // rows are summed (interim + final + special) into dps_latest.
+  const { data: divRows } = await db
+    .from("stock_dividends")
+    .select("stock_id,financial_year,kind,dps_kes,payment_date,source_url")
+    .order("financial_year", { ascending: false });
+
+  const divsByStock = new Map<string, SnapshotStockDividend[]>();
+  for (const d of divRows ?? []) {
+    const arr = divsByStock.get(d.stock_id) ?? [];
+    arr.push({
+      financial_year: d.financial_year,
+      kind: d.kind,
+      dps_kes: Number(d.dps_kes),
+      payment_date: d.payment_date ?? null,
+      source_url: d.source_url ?? null,
+    });
+    divsByStock.set(d.stock_id, arr);
+  }
+
+  // Price rows only when licensed. The query itself is skipped when the gate is
+  // off, so an unlicensed deployment never even reads the table.
+  const priceByStock = new Map<
+    string,
+    { close: number; prev: number | null; asOf: string }
+  >();
+  const sparkByStock = new Map<string, number[]>();
+  if (pricesEnabled) {
+    const pxCutoff = new Date(Date.now() - 180 * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    const { data: pxRows } = await db
+      .from("stock_prices")
+      .select("stock_id,close_kes,prev_close,as_of")
+      .gte("as_of", pxCutoff)
+      .order("as_of", { ascending: true })
+      .limit(20000);
+    for (const p of pxRows ?? []) {
+      const arr = sparkByStock.get(p.stock_id) ?? [];
+      arr.push(Number(p.close_kes));
+      sparkByStock.set(p.stock_id, arr);
+      // ascending order, so the last row seen per stock is the latest
+      priceByStock.set(p.stock_id, {
+        close: Number(p.close_kes),
+        prev: p.prev_close == null ? null : Number(p.prev_close),
+        asOf: p.as_of,
+      });
+    }
+  }
+
+  const stocks: SnapshotStock[] = (stockRows ?? []).map((s) => {
+    const divs = divsByStock.get(s.id) ?? [];
+    const dpsYear = divs.length ? divs[0].financial_year : null;
+    const dpsLatest = dpsYear == null ? null : Number(
+      divs
+        .filter((d) => d.financial_year === dpsYear)
+        .reduce((a, d) => a + d.dps_kes, 0)
+        .toFixed(4),
+    );
+
+    const px = priceByStock.get(s.id) ?? null;
+    const close = px?.close ?? null;
+    const prev = px?.prev ?? null;
+    const shares = s.shares_outstanding == null
+      ? null
+      : Number(s.shares_outstanding);
+
+    return {
+      id: s.id,
+      ticker: s.ticker,
+      name: s.name,
+      sector: s.sector ?? null,
+      segment: s.segment ?? null,
+      about: s.about ?? null,
+      logo_url: s.logo_url ?? null,
+      brand_color: s.brand_color ?? null,
+      website: s.website ?? null,
+      ir_url: s.ir_url ?? null,
+      listed_on: s.listed_on ?? null,
+      shares_outstanding: shares,
+
+      dividends: divs,
+      dps_latest: dpsLatest,
+      dps_year: dpsYear,
+
+      // Gated block. Every one of these is null when pricesEnabled is false.
+      close_kes: close,
+      prev_close: prev,
+      change_pct: close != null && prev != null && prev > 0
+        ? Number((((close - prev) / prev) * 100).toFixed(2))
+        : null,
+      price_as_of: px?.asOf ?? null,
+      market_cap: close != null && shares != null ? close * shares : null,
+      // Yield needs a price. No licence, no price, no yield: the app shows the
+      // declared dividend per share on its own instead.
+      div_yield: close != null && close > 0 && dpsLatest != null
+        ? Number(((dpsLatest / close) * 100).toFixed(2))
+        : null,
+      spark: (() => {
+        const h = sparkByStock.get(s.id);
+        return h && h.length >= 2 ? downsample(h) : null;
+      })(),
+    };
+  });
+
+  // CMA-licensed brokers for the "Where to buy" section. Fructa routes out to
+  // these and never executes a trade, so this is a directory, not an order path.
+  const { data: brokerRows } = await db
+    .from("brokers")
+    .select("id,name,license_no,blurb,phone,email,website,app_url,logo_url")
+    .eq("active", true)
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("name", { ascending: true });
+
   const snapshot:
     & SnapshotV2
     & {
@@ -270,6 +412,8 @@ export async function publishSnapshot(
       learn: SnapshotLearn;
       posts: SnapshotPost[];
       insurance_types: SnapshotInsuranceType[];
+      stocks: SnapshotStock[];
+      brokers: SnapshotBroker[];
     } = {
     schema: 2,
     as_of: asOf,
@@ -286,6 +430,8 @@ export async function publishSnapshot(
     learn,
     posts,
     insurance_types: (insTypes ?? []) as SnapshotInsuranceType[],
+    stocks,
+    brokers: (brokerRows ?? []) as SnapshotBroker[],
   };
 
   const body = new TextEncoder().encode(JSON.stringify(snapshot));

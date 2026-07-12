@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_update/in_app_update.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../data/backup_service.dart';
 import '../../data/providers.dart';
@@ -23,7 +24,7 @@ Future<void> runLaunchTasks(BuildContext context, WidgetRef ref) async {
         if (r != null && !r.isEmpty && context.mounted) {
           await _showFoundSheet(context, ref, r);
         }
-      } catch (_) {/* offline / transient — silent */}
+      } catch (_) {/* offline or transient, stay silent */}
     }
   }
   if (context.mounted) await _maybePromptUpdate(context);
@@ -60,7 +61,7 @@ Future<void> _maybePromptUpdate(BuildContext context) async {
       await InAppUpdate.startFlexibleUpdate(); // downloads in the background
       await InAppUpdate.completeFlexibleUpdate(); // installs on confirm
     }
-  } catch (_) {/* not installed from Play, or offline — ignore */}
+  } catch (_) {/* not installed from Play, or offline, so ignore */}
 }
 
 // ── Shared chrome ───────────────────────────────────────────────────────────
@@ -141,11 +142,11 @@ class _BackupSheetState extends ConsumerState<_BackupSheet> {
       final at = await ref.read(backupServiceProvider).backup();
       ref.read(lastBackupProvider.notifier).state = at;
       if (mounted) {
-        _toast(context, 'Backed up');
+        _toast(context, t('backup.backedUp'));
         Navigator.of(context).pop();
       }
     } catch (_) {
-      if (mounted) _toast(context, "Couldn't back up — check your connection");
+      if (mounted) _toast(context, t('backup.failed'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -167,14 +168,13 @@ class _BackupSheetState extends ConsumerState<_BackupSheet> {
             Row(children: [
               Icon(Icons.cloud_upload_outlined, color: c.accent, size: 22),
               const SizedBox(width: 10),
-              Text('Back up portfolio',
+              Text(t('settings.data.backup'),
                   style: TextStyle(
                       color: c.text, fontSize: 18, fontWeight: FontWeight.w700)),
             ]),
             const SizedBox(height: 8),
             Text(
-              'No account needed. Save this recovery code — it\u2019s the only '
-              'way to restore on a new phone or after clearing app data.',
+              t('backup.body'),
               style: TextStyle(color: c.muted, fontSize: 13, height: 1.5),
             ),
             const SizedBox(height: 16),
@@ -204,7 +204,7 @@ class _BackupSheetState extends ConsumerState<_BackupSheet> {
                         ? null
                         : () {
                             Clipboard.setData(ClipboardData(text: _code!));
-                            _toast(context, 'Code copied');
+                            _toast(context, t('backup.codeCopied'));
                           },
                     icon: Icon(Icons.copy_rounded, color: c.muted, size: 20),
                   ),
@@ -216,13 +216,13 @@ class _BackupSheetState extends ConsumerState<_BackupSheet> {
               Row(children: [
                 Icon(Icons.check_circle_outline, size: 14, color: c.up),
                 const SizedBox(width: 6),
-                Text('Last backup ${_fmtWhen(last)}',
+                Text(t('backup.lastBackup', {'when': _fmtWhen(last)}),
                     style: TextStyle(color: c.faint, fontSize: 11.5)),
               ]),
             ],
             const SizedBox(height: 18),
             _primaryBtn(context,
-                label: 'Back up now', onTap: _backupNow, busy: _busy),
+                label: t('backup.now'), onTap: _backupNow, busy: _busy),
           ],
         ),
       ),
@@ -252,7 +252,7 @@ class _RestoreSheetState extends ConsumerState<_RestoreSheet> {
   Future<void> _restore() async {
     final code = _ctrl.text.trim();
     if (code.length < 12) {
-      setState(() => _error = 'Enter your full recovery code');
+      setState(() => _error = t('backup.codeTooShort'));
       return;
     }
     setState(() {
@@ -263,18 +263,19 @@ class _RestoreSheetState extends ConsumerState<_RestoreSheet> {
       final svc = ref.read(backupServiceProvider);
       final r = await svc.restore(code);
       if (r == null || r.isEmpty) {
-        setState(() => _error = 'No backup found for that code');
+        setState(() => _error = t('backup.notFound'));
         return;
       }
       await svc.applyRestore(r.holdings);
       await svc.adoptCode(code);
       ref.invalidate(holdingsProvider);
       if (mounted) {
-        _toast(context, 'Restored ${r.holdings.length} holdings');
+        _toast(context,
+            t('backup.restored', {'n': '${r.holdings.length}'}));
         Navigator.of(context).pop();
       }
     } catch (_) {
-      setState(() => _error = "Couldn't restore — check your connection");
+      setState(() => _error = t('backup.restoreFailed'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -295,13 +296,12 @@ class _RestoreSheetState extends ConsumerState<_RestoreSheet> {
             Row(children: [
               Icon(Icons.settings_backup_restore, color: c.accent, size: 22),
               const SizedBox(width: 10),
-              Text('Restore from backup',
+              Text(t('settings.data.restore'),
                   style: TextStyle(
                       color: c.text, fontSize: 18, fontWeight: FontWeight.w700)),
             ]),
             const SizedBox(height: 8),
-            Text('Enter the recovery code from your other device. This replaces '
-                'whatever is on this phone.',
+            Text(t('backup.restoreBody'),
                 style: TextStyle(color: c.muted, fontSize: 13, height: 1.5)),
             const SizedBox(height: 16),
             TextField(
@@ -314,7 +314,7 @@ class _RestoreSheetState extends ConsumerState<_RestoreSheet> {
                   fontSize: 17,
                   letterSpacing: 1.2),
               decoration: InputDecoration(
-                hintText: 'AKB-XXXX-XXXX-XXXX-XXXX',
+                hintText: t('backup.codeHint'),
                 hintStyle: TextStyle(color: c.faint),
                 filled: true,
                 fillColor: c.s2,
@@ -329,7 +329,7 @@ class _RestoreSheetState extends ConsumerState<_RestoreSheet> {
             ),
             const SizedBox(height: 16),
             _primaryBtn(context,
-                label: 'Restore', onTap: _restore, busy: _busy),
+                label: t('backup.restore'), onTap: _restore, busy: _busy),
           ],
         ),
       ),
@@ -355,7 +355,11 @@ Future<void> _showFoundSheet(
           if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
         }
 
-        final where = r.deviceLabel != null ? ' from ${r.deviceLabel}' : '';
+        final vars = {
+          'n': '${r.holdings.length}',
+          'when': _fmtWhen(r.updatedAt),
+          if (r.deviceLabel != null) 'device': r.deviceLabel!,
+        };
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(22, 14, 22, 22),
@@ -367,7 +371,7 @@ Future<void> _showFoundSheet(
                 Row(children: [
                   Icon(Icons.cloud_done_outlined, color: c.accent, size: 22),
                   const SizedBox(width: 10),
-                  Text('Backup found',
+                  Text(t('backup.foundTitle'),
                       style: TextStyle(
                           color: c.text,
                           fontSize: 18,
@@ -375,13 +379,17 @@ Future<void> _showFoundSheet(
                 ]),
                 const SizedBox(height: 8),
                 Text(
-                  'A saved portfolio$where (${r.holdings.length} holdings, '
-                  '${_fmtWhen(r.updatedAt)}) is linked to this device. Restore it?',
+                  t(
+                    r.deviceLabel != null
+                        ? 'backup.foundBodyFrom'
+                        : 'backup.foundBody',
+                    vars,
+                  ),
                   style: TextStyle(color: c.muted, fontSize: 13.5, height: 1.5),
                 ),
                 const SizedBox(height: 18),
                 _primaryBtn(sheetCtx,
-                    label: 'Restore', onTap: doRestore, busy: busy),
+                    label: t('backup.restore'), onTap: doRestore, busy: busy),
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
@@ -389,7 +397,7 @@ Future<void> _showFoundSheet(
                     onPressed:
                         busy ? null : () => Navigator.of(sheetCtx).pop(),
                     style: TextButton.styleFrom(foregroundColor: c.muted),
-                    child: const Text('Not now'),
+                    child: Text(t('common.notNow')),
                   ),
                 ),
               ],
@@ -419,19 +427,18 @@ class _UpdateSheet extends StatelessWidget {
             Row(children: [
               Icon(Icons.system_update, color: c.accent, size: 22),
               const SizedBox(width: 10),
-              Text('Update available',
+              Text(t('update.title'),
                   style: TextStyle(
                       color: c.text, fontSize: 18, fontWeight: FontWeight.w700)),
             ]),
             const SizedBox(height: 8),
             Text(
-              'A new version of fructa is ready. It downloads in the background '
-              'and installs when you\u2019re done.',
+              t('update.body'),
               style: TextStyle(color: c.muted, fontSize: 13.5, height: 1.5),
             ),
             const SizedBox(height: 18),
             _primaryBtn(context,
-                label: 'Update',
+                label: t('update.cta'),
                 onTap: () => Navigator.of(context).pop(true)),
             const SizedBox(height: 8),
             SizedBox(
@@ -439,7 +446,7 @@ class _UpdateSheet extends StatelessWidget {
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
                 style: TextButton.styleFrom(foregroundColor: c.muted),
-                child: const Text('Later'),
+                child: Text(t('common.later')),
               ),
             ),
           ],

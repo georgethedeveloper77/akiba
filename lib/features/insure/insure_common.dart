@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -9,6 +10,7 @@ import '../../core/theme.dart';
 import '../../core/widgets/kit.dart';
 import '../../data/models/insurer.dart';
 import '../../data/models/remote_config.dart';
+import '../../data/snapshot_providers.dart';
 
 // ── config-first copy ────────────────────────────────────────────────────
 // Admin-editable copy: the config value wins when set, otherwise the baked
@@ -116,6 +118,32 @@ double coverNum(String? cover) {
 
 // ── shared widgets ───────────────────────────────────────────────────────
 
+/// The one way an insurer logo is ever drawn.
+///
+/// Resolves the full chain that [FundLogo] expects: hosted company logo (the
+/// `logos` bucket) first, then the insurer's own domain, then a brand-tinted
+/// monogram. Every insure surface must use this rather than calling FundLogo
+/// with a bare `domain:`, which is what caused every insurer to render as a
+/// monogram even when its company had a real mark uploaded.
+class InsurerLogo extends ConsumerWidget {
+  const InsurerLogo(this.insurer, {super.key, this.size = 42});
+
+  final Insurer insurer;
+  final double size;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final i = insurer;
+    return FundLogo(
+      logoUrl: ref.watch(insurerLogoUrlProvider(i.companyId)),
+      domain: i.logoDomain,
+      seed: i.name,
+      size: size,
+      brandColor: insurerBrand(context, i),
+    );
+  }
+}
+
 /// Row of 5 rating stars (filled to [rating]). Material icons, not glyphs.
 class Stars extends StatelessWidget {
   const Stars(this.rating, {super.key, this.size = 12});
@@ -177,6 +205,7 @@ class InsureQuoteRow extends StatelessWidget {
     required this.priceText,
     required this.onTap,
     this.logoDomain,
+    this.logoUrl,
     this.stars,
     this.meta,
     this.benefits = const [],
@@ -189,6 +218,7 @@ class InsureQuoteRow extends StatelessWidget {
   final String priceText;
   final VoidCallback onTap;
   final String? logoDomain;
+  final String? logoUrl;
   final int? stars;
   final String? meta;
   final List<String> benefits;
@@ -228,7 +258,11 @@ class InsureQuoteRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   FundLogo(
-                      domain: logoDomain, seed: name, size: 42, brandColor: brand),
+                      logoUrl: logoUrl,
+                      domain: logoDomain,
+                      seed: name,
+                      size: 42,
+                      brandColor: brand),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -418,6 +452,37 @@ void openWeb(String site) => _open(
     Uri.parse(site.startsWith('http') ? site : 'https://$site'));
 
 String kes(num v) => 'KES ${withCommas(v.round())}';
+
+/// 104006 -> "104k", 3450000 -> "3.5M". Keeps a bar label or a card figure
+/// readable at 10px without an ellipsis, which the house rules forbid anyway.
+String kesCompact(num v) {
+  final d = v.toDouble();
+  if (d >= 1e6) {
+    final m = d / 1e6;
+    return '${m >= 10 ? m.round() : m.toStringAsFixed(1)}M';
+  }
+  if (d >= 1000) return '${(d / 1000).round()}k';
+  return d.round().toString();
+}
+
+/// Trim the corporate tail so an insurer fits a chart label. Only the trailing
+/// boilerplate goes; the meaningful part of the name is never cut.
+String shortInsurerName(String n) {
+  var s = n;
+  for (final re in <RegExp>[
+    RegExp(r'\s*Insurance\s*Company.*$', caseSensitive: false),
+    RegExp(r'\s*Assurance\s*Company.*$', caseSensitive: false),
+    RegExp(r'\s*Insurance\s*Limited$', caseSensitive: false),
+    RegExp(r'\s*\(K\)\s*Limited$', caseSensitive: false),
+    RegExp(r'\s*\(Kenya\)\s*Limited$', caseSensitive: false),
+    RegExp(r'\s*Limited$', caseSensitive: false),
+    RegExp(r'\s*Insurance$', caseSensitive: false),
+    RegExp(r'\s*Assurance$', caseSensitive: false),
+  ]) {
+    s = s.replaceFirst(re, '');
+  }
+  return s.trim();
+}
 
 /// Landed motor premium: base + levy% of base + flat stamp duty. Kenya's
 /// mandatory charges (training 0.2% + PHCF 0.25% = 0.45% of basic premium,

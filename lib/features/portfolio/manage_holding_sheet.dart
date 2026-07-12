@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/format.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/fund_logo.dart';
 import '../../data/models/fund.dart';
@@ -56,19 +57,22 @@ class _ManageSheetState extends ConsumerState<_ManageSheet> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: c.s1,
-        title: Text('Remove holding?', style: TextStyle(color: c.text)),
+        title: Text(t('portfolio.manage.removeTitle'),
+            style: TextStyle(color: c.text)),
         content: Text(
-          'This removes ${widget.fund?.name ?? widget.holding.fundId} from your portfolio. Your money is not touched; this is just tracking.',
+          t('portfolio.manage.removeBody', {
+            'name': widget.fund?.name ?? widget.holding.fundId,
+          }),
           style: TextStyle(color: c.muted),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: TextStyle(color: c.muted)),
+            child: Text(t('common.cancel'), style: TextStyle(color: c.muted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Remove', style: TextStyle(color: c.down)),
+            child: Text(t('common.remove'), style: TextStyle(color: c.down)),
           ),
         ],
       ),
@@ -128,7 +132,10 @@ class _ManageSheetState extends ConsumerState<_ManageSheet> {
                     ),
                     if (f?.currentRate != null)
                       Text(
-                        '${f!.currentRate!.toStringAsFixed(2)}% \u00b7 ${f.manager}',
+                        t('portfolio.manage.rateManager', {
+                          'rate': f!.currentRate!.toStringAsFixed(2),
+                          'manager': f.manager,
+                        }),
                         style: TextStyle(color: c.faint, fontSize: 12),
                       ),
                   ],
@@ -137,7 +144,8 @@ class _ManageSheetState extends ConsumerState<_ManageSheet> {
             ],
           ),
           const SizedBox(height: 20),
-          Text('Balance', style: TextStyle(color: c.faint, fontSize: 12)),
+          Text(t('portfolio.manage.balance'),
+              style: TextStyle(color: c.faint, fontSize: 12)),
           const SizedBox(height: 6),
           TextField(
             controller: _balance,
@@ -161,7 +169,8 @@ class _ManageSheetState extends ConsumerState<_ManageSheet> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Was ${money(h.currency, h.balance)} \u00b7 a change is logged as a deposit or withdrawal.',
+            t('portfolio.manage.was',
+                {'amt': money(h.currency, h.balance)}),
             style: TextStyle(color: c.faint, fontSize: 11),
           ),
           const SizedBox(height: 20),
@@ -175,7 +184,7 @@ class _ManageSheetState extends ConsumerState<_ManageSheet> {
                     foregroundColor: c.onAccent,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text('Save'),
+                  child: Text(t('common.save')),
                 ),
               ),
               const SizedBox(width: 12),
@@ -189,7 +198,7 @@ class _ManageSheetState extends ConsumerState<_ManageSheet> {
                     horizontal: 18,
                   ),
                 ),
-                child: const Text('Remove'),
+                child: Text(t('common.remove')),
               ),
             ],
           ),
