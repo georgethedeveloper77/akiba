@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { EChartsOption } from 'echarts';
 import type { LandingCharts } from '../content';
-import { fade, tooltip, useChart, type Tokens } from './echarts';
+import { fade, tooltip, useChart, type LabelParams, type Tokens } from './echarts';
 
 /*
  * ONE colour rule, used by both the chart and the board underneath it, so a
@@ -60,7 +60,7 @@ export default function HeroTerminal({ charts }: { charts: LandingCharts }) {
           endLabel: s.lead
             ? {
                 show: true,
-                formatter: (p: { value: number }) => `${p.value.toFixed(2)}${tab.unit}`,
+                formatter: (p: LabelParams) => `${Number(p.value).toFixed(2)}${tab.unit}`,
                 color: '#1A1206',
                 backgroundColor: t.gold,
                 padding: [3, 6],

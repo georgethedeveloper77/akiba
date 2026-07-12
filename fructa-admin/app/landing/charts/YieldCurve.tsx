@@ -2,7 +2,7 @@
 
 import type { EChartsOption } from 'echarts';
 import { CBR, type LandingCharts } from '../content';
-import { fade, tooltip, useChart } from './echarts';
+import { fade, tooltip, useChart, type LabelParams } from './echarts';
 
 /*
  * The curve that prices everything else on the page, with the policy rate behind
@@ -46,7 +46,7 @@ export default function YieldCurve({ curve }: { curve: LandingCharts['curve'] })
             show: true,
             position: 'top',
             distance: 8,
-            formatter: (p: { value: number }) => `${p.value.toFixed(2)}%`,
+            formatter: (p: LabelParams) => `${Number(p.value).toFixed(2)}%`,
             color: t.ink,
             fontFamily: t.mono,
             fontSize: 11,

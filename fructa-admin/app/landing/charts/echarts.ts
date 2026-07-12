@@ -39,6 +39,15 @@ echarts.use([
   SVGRenderer,
 ]);
 
+/**
+ * What ECharts actually hands a label/endLabel formatter. Its own
+ * CallbackDataParams types `value` as a wide union (it can be a string, an
+ * array, a date or undefined depending on the series), so a callback that
+ * demands `number` is rejected under strictFunctionTypes. Take it as unknown
+ * and coerce at the call site, which is honest about what arrives.
+ */
+export type LabelParams = { value: unknown };
+
 export type Tokens = {
   gold: string; s2: string; s3: string; s4: string;
   ink: string; mute: string; faint: string;

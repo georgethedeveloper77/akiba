@@ -68,6 +68,7 @@ export default function AlertThreshold({ alert }: { alert: LandingCharts['alert'
                 },
                 data: [
                   {
+                    name: 'crossed',
                     coord: [
                       alert.crossedAt,
                       alert.values[alert.labels.indexOf(alert.crossedAt)],
