@@ -1,0 +1,49 @@
+name: scrape-nse
+
+# NSE end-of-day prices, fetched from a GitHub runner.
+#
+# This runs here rather than on the Supabase edge because afx BLOCKS SUPABASE'S
+# EGRESS. The edge functions live in eu-central-1 and afx drops those packets
+# silently: no 403, no 429, just no answer until the socket dies at 150 seconds.
+# Swapping the user agent for a real browser string changed nothing, which is how
+# we know it is the address and not the header.
+#
+# A GitHub runner has an ordinary-looking IP. ke-cbk-tbills already runs this way
+# for the same class of reason.
+#
+# The runner ONLY fetches and parses. It posts the board to the scrape-nse edge
+# function, which still owns ticker mapping, the sanity band, prev_close, source
+# health, the run log and the snapshot rebuild. Do not be tempted to give this
+# workflow a service key and let it write to stock_prices directly: it would
+# bypass every check we built, and the checks are the product.
+
+on:
+  schedule:
+    # 16:00 UTC = 19:00 EAT, weekdays. The NSE trades 09:00 to 15:00 EAT, so this
+    # is four hours after the close: late enough that afx has published the final
+    # board, early enough to be the same calendar day in Nairobi.
+    #
+    # GitHub cron is UTC and is best-effort: it can be delayed under load, which
+    # is fine for an end-of-day job and would not be for an intraday one.
+    - cron: "0 16 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Fetch the NSE board and post it to scrape-nse
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          TRIGGER: ${{ github.event_name == 'workflow_dispatch' && 'manual' || 'cron' }}
+        run: |
+          deno run --allow-net --allow-env supabase/scripts/nse-fetch-post.ts

@@ -87,6 +87,20 @@ class RemoteConfig {
   double get tbill364Pct => benchmarkRate('benchmark.tbill_364', 8.87);
   double get whtPct => benchmarkRate('benchmark.wht_pct', 15);
 
+  /// Withholding tax on DIVIDENDS from a listed company: 5% for a resident,
+  /// and it is a FINAL tax.
+  ///
+  /// This is not [whtPct]. That one is 15%, and it is the rate on interest,
+  /// which is what a money market fund and a T-bill pay you. Dividends are
+  /// taxed at a third of it. Using the interest rate on a dividend, or the
+  /// other way round, is exactly the error the Learn course spends a lesson on,
+  /// and it is the difference between a stock looking worse than a T-bill and
+  /// looking better.
+  ///
+  /// Config-overridable like every other benchmark, so a Finance Act can be
+  /// answered by editing a row rather than shipping a release.
+  double get dividendWhtPct => benchmarkRate('benchmark.dividend_wht_pct', 5);
+
   // ── Market (CMA quarterly) ────────────────────────────────────────────────
   // market.aum_by_fund_type:
   //   {"as_of":"2026-03-31","source":"CMA CIS Q1 2026","total_kes":…,

@@ -1,4 +1,4 @@
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/supabase-js@2.85.0";
 
 // Service-role client for edge functions. Bypasses RLS (server-side only).
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected automatically.

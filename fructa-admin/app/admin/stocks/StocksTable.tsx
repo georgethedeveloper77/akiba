@@ -14,10 +14,19 @@ export type StockRow = {
   logo_url: string | null;
   brand_color: string | null;
   shares_outstanding: number | null;
+  eps: number | null;
+  eps_year: number | null;
   active: boolean;
   dps_latest: number | null;
   dps_year: number | null;
   div_count: number;
+  // The price block. Read straight from stock_prices, not from the snapshot:
+  // this table is how you find out the SCRAPER is wrong, and reading the
+  // published file would show you the same wrong number it already shipped.
+  close_kes: number | null;
+  prev_close: number | null;
+  price_as_of: string | null;
+  pe: number | null;
 };
 
 const TINTS = ["#E7B24C", "#5B8DEF", "#A78BFA", "#3DD6C4", "#3DDC97"];
@@ -27,11 +36,26 @@ function hashTint(seed: string) {
   return TINTS[h % TINTS.length];
 }
 
-type SortKey = "name" | "ticker" | "sector" | "dps";
+type SortKey = "name" | "ticker" | "sector" | "dps" | "price" | "change";
+
+/** Day change from OUR two stored marks. Null when we hold only one, which is
+ *  the honest answer on a counter's first day and on a share that did not trade.
+ *  Never zero: "did not trade" and "closed flat" are different facts. */
+function changePct(s: StockRow): number | null {
+  if (s.close_kes == null || s.prev_close == null || s.prev_close <= 0) return null;
+  return ((s.close_kes - s.prev_close) / s.prev_close) * 100;
+}
 
 export function StocksTable({ rows }: { rows: StockRow[] }) {
   const [q, setQ] = useState("");
   const [seg, setSeg] = useState<string>("all");
+  // The freshest day in the data. Any stock whose price is older than this did
+  // not trade on the last board, and the table says so rather than presenting a
+  // stale number in the same style as a live one.
+  const newest = useMemo(
+    () => rows.map((r) => r.price_as_of).filter(Boolean).sort().at(-1) ?? null,
+    [rows],
+  );
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "name", dir: 1 });
 
   const sectors = useMemo(() => {
@@ -57,6 +81,20 @@ export function StocksTable({ rows }: { rows: StockRow[] }) {
         case "sector": r = (a.sector ?? "").localeCompare(b.sector ?? ""); break;
         case "dps": {
           const av = a.dps_latest, bv = b.dps_latest;
+          if (av == null && bv == null) { r = 0; break; }
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          r = av - bv; break;
+        }
+        case "price": {
+          const av = a.close_kes, bv = b.close_kes;
+          if (av == null && bv == null) { r = 0; break; }
+          if (av == null) return 1;   // no price always sinks, either direction
+          if (bv == null) return -1;
+          r = av - bv; break;
+        }
+        case "change": {
+          const av = changePct(a), bv = changePct(b);
           if (av == null && bv == null) { r = 0; break; }
           if (av == null) return 1;
           if (bv == null) return -1;
@@ -116,7 +154,10 @@ export function StocksTable({ rows }: { rows: StockRow[] }) {
               <Th k="name">Company</Th>
               <Th k="ticker">Ticker</Th>
               <Th k="sector">Sector</Th>
+              <Th k="price">Price</Th>
+              <Th k="change">Day</Th>
               <Th k="dps">Dividend</Th>
+              <th className="px-3 py-3 font-medium uppercase tracking-wider">P / E</th>
               <th className="px-3 py-3 font-medium uppercase tracking-wider">Shares out</th>
               <th className="px-3 py-3 font-medium uppercase tracking-wider">Status</th>
               <th className="px-3 py-3" />
@@ -148,6 +189,41 @@ export function StocksTable({ rows }: { rows: StockRow[] }) {
 
                   <td className="px-3 py-3 text-mute">{s.sector ?? "not set"}</td>
 
+                  {/* Price. The VWAP, not a last trade: the NSE daily list has
+                      no closing-price column. A stock whose newest mark is older
+                      than the board's newest day is called out, because a stale
+                      price rendered like a live one is how a broken scraper
+                      hides. */}
+                  <td className="px-3 py-3">
+                    {s.close_kes != null ? (
+                      <div className="flex flex-col leading-tight">
+                        <span className="tnum text-sm text-ink">{s.close_kes.toFixed(2)}</span>
+                        <span className={"text-[10px] " + (newest && s.price_as_of !== newest ? "text-warn" : "text-faint")}>
+                          {newest && s.price_as_of !== newest ? `stale ${s.price_as_of}` : s.price_as_of}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-faint">no price</span>
+                    )}
+                  </td>
+
+                  {/* Day change. Blank, never 0.00%, when we hold one mark: a
+                      share that did not trade did not close flat. */}
+                  <td className="px-3 py-3">
+                    {(() => {
+                      const ch = changePct(s);
+                      if (ch == null) {
+                        return <span className="text-xs text-faint">{s.close_kes == null ? "" : "no prior"}</span>;
+                      }
+                      const tone = ch > 0 ? "text-live" : ch < 0 ? "text-bad" : "text-mute";
+                      return (
+                        <span className={"tnum text-sm " + tone}>
+                          {ch > 0 ? "+" : ""}{ch.toFixed(2)}%
+                        </span>
+                      );
+                    })()}
+                  </td>
+
                   <td className="px-3 py-3">
                     {s.dps_latest != null ? (
                       <div className="flex flex-col leading-tight">
@@ -158,6 +234,24 @@ export function StocksTable({ rows }: { rows: StockRow[] }) {
                       </div>
                     ) : (
                       <span className="text-xs text-faint">no dividend yet</span>
+                    )}
+                  </td>
+
+                  {/* P/E. Suppressed on a loss, not shown as a negative: a
+                      negative multiple is meaningless, and printing "-4.2x"
+                      invites a reader to see a loss-making company as cheap. */}
+                  <td className="px-3 py-3">
+                    {s.pe != null ? (
+                      <div className="flex flex-col leading-tight">
+                        <span className="tnum text-sm text-ink">{s.pe.toFixed(1)}</span>
+                        {s.eps_year != null && (
+                          <span className="text-[10px] text-faint">EPS FY{s.eps_year}</span>
+                        )}
+                      </div>
+                    ) : s.eps != null && s.eps <= 0 ? (
+                      <span className="text-xs text-warn">loss making</span>
+                    ) : (
+                      <span className="text-xs text-faint">{s.eps == null ? "no EPS" : "no price"}</span>
                     )}
                   </td>
 
@@ -187,7 +281,7 @@ export function StocksTable({ rows }: { rows: StockRow[] }) {
               );
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-mute">No stocks match.</td></tr>
+              <tr><td colSpan={10} className="px-4 py-10 text-center text-sm text-mute">No stocks match.</td></tr>
             )}
           </tbody>
         </table>

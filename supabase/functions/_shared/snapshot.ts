@@ -1,9 +1,10 @@
-import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import type { SupabaseClient } from "jsr:@supabase/supabase-js@2.85.0";
 import type {
   SnapshotAgent,
   SnapshotBroker,
   SnapshotCompany,
   SnapshotEvent,
+  SnapshotFund,
   SnapshotFx,
   SnapshotInsurer,
   SnapshotInsuranceType,
@@ -29,12 +30,13 @@ const FILE = "funds-snapshot.json";
 
 // Profile fields (0026): inception, benchmark key, expense/redemption/lock-in,
 // top-up, objective. Returns fields (0027): trailing performance from monthly
-// fact sheets — YTD/1Y/3Y/5Y fund + 1Y/3Y/5Y benchmark, best/worst month, and
-// the fact-sheet month. All nullable — funds without them serialise as before.
+// fact sheets. Priced fields (0040): NAV per unit + as-of + distribution, for
+// basis='nav' funds. All nullable, so funds without them serialise as before.
 const FUND_FIELDS =
   "id,name,manager,category,fund_type,currency,basis,retail,current_rate,tax_free,min_invest,mgmt_fee,site_url,invest_url,contact_url,logo_domain,verified,featured,company_id," +
   "inception_date,benchmark_key,expense_ratio,redemption_fee,lock_in_months,top_up_min,objective," +
-  "return_ytd,return_1y,return_3y,return_5y,bench_1y,bench_3y,bench_5y,best_month,worst_month,returns_as_of";
+  "return_ytd,return_1y,return_3y,return_5y,bench_1y,bench_3y,bench_5y,best_month,worst_month,returns_as_of," +
+  "price_per_unit,price_as_of,distribution_pct";
 
 const INSURER_FIELDS =
   "id,name,company_id,currency,plans,min_premium,excess_pct,excess_min,claims_days,rating,motor_rate,benefits,logo_domain," +
@@ -64,7 +66,12 @@ export async function publishSnapshot(
     .eq("kind", "fund")
     .neq("status", "hidden")
     .order("category", { ascending: true })
-    .order("current_rate", { ascending: false, nullsFirst: false });
+    .order("current_rate", { ascending: false, nullsFirst: false })
+    // Explicit row type. postgrest-js infers the shape from the select STRING
+    // at the type level, and that parser gives up on a string this long,
+    // handing back GenericStringError instead of a row. Naming the type here
+    // sidesteps the parser entirely and keeps every downstream access typed.
+    .returns<SnapshotFund[]>();
   if (error) throw new Error(`snapshot funds query failed: ${error.message}`);
 
   // C2 — compact per-fund sparkline (≤20 points, trailing 180 days) attached
@@ -79,10 +86,12 @@ export async function publishSnapshot(
     .from("rate_history")
     .select("fund_id,rate,as_of")
     .gte("as_of", cutoff)
-    .order("as_of", { ascending: true })
+    // DESCENDING on purpose. See the note in the stock_prices query below: with
+    // an ascending order the row cap silently drops the NEWEST data.
+    .order("as_of", { ascending: false })
     .limit(20000);
   const histByFund = new Map<string, number[]>();
-  for (const h of histRows ?? []) {
+  for (const h of [...(histRows ?? [])].reverse()) {
     const arr = histByFund.get(h.fund_id) ?? [];
     arr.push(h.rate);
     histByFund.set(h.fund_id, arr);
@@ -96,7 +105,7 @@ export async function publishSnapshot(
     return out;
   };
   const fundsWithSpark = (funds ?? []).map((f) => {
-    const h = histByFund.get((f as { id: string }).id);
+    const h = histByFund.get(f.id);
     return h && h.length >= 2 ? { ...f, spark: downsample(h) } : f;
   });
 
@@ -105,7 +114,8 @@ export async function publishSnapshot(
     .from("funds")
     .select(INSURER_FIELDS)
     .eq("kind", "insurance")
-    .neq("status", "hidden");
+    .neq("status", "hidden")
+    .returns<SnapshotInsurer[]>();
 
   const { data: companies } = await db
     .from("companies")
@@ -284,7 +294,7 @@ export async function publishSnapshot(
   const { data: stockRows } = await db
     .from("stocks")
     .select(
-      "id,ticker,name,sector,segment,about,logo_url,brand_color,website,ir_url,listed_on,shares_outstanding",
+      "id,ticker,name,sector,segment,about,logo_url,brand_color,website,ir_url,listed_on,shares_outstanding,eps,eps_year",
     )
     .eq("active", true)
     .order("sort_order", { ascending: true, nullsFirst: false })
@@ -294,7 +304,7 @@ export async function publishSnapshot(
   // rows are summed (interim + final + special) into dps_latest.
   const { data: divRows } = await db
     .from("stock_dividends")
-    .select("stock_id,financial_year,kind,dps_kes,payment_date,source_url")
+    .select("stock_id,financial_year,kind,dps_kes,declared_on,book_closure,payment_date,source_url")
     .order("financial_year", { ascending: false });
 
   const divsByStock = new Map<string, SnapshotStockDividend[]>();
@@ -304,6 +314,8 @@ export async function publishSnapshot(
       financial_year: d.financial_year,
       kind: d.kind,
       dps_kes: Number(d.dps_kes),
+      declared_on: d.declared_on ?? null,
+      book_closure: d.book_closure ?? null,
       payment_date: d.payment_date ?? null,
       source_url: d.source_url ?? null,
     });
@@ -325,9 +337,18 @@ export async function publishSnapshot(
       .from("stock_prices")
       .select("stock_id,close_kes,prev_close,as_of")
       .gte("as_of", pxCutoff)
-      .order("as_of", { ascending: true })
+      // DESCENDING, then reversed below.
+      //
+      // This was a real bug waiting to fire. The row cap is a backstop on an
+      // already date-bounded window, but with `ascending: true` the database
+      // returns the OLDEST 20,000 rows. The day the window outgrows the cap,
+      // TODAY'S closes are the ones thrown away: the sparkline would stop short
+      // of the present and the headline price would freeze at an old value,
+      // with nothing logged and nothing failing. Ordering descending means the
+      // cap can only ever discard the oldest points, which is harmless.
+      .order("as_of", { ascending: false })
       .limit(20000);
-    for (const p of pxRows ?? []) {
+    for (const p of [...(pxRows ?? [])].reverse()) {
       const arr = sparkByStock.get(p.stock_id) ?? [];
       arr.push(Number(p.close_kes));
       sparkByStock.set(p.stock_id, arr);
@@ -357,6 +378,12 @@ export async function publishSnapshot(
       ? null
       : Number(s.shares_outstanding);
 
+    // EPS is published whether or not prices are on: it is a fact about the
+    // company's earnings, not a market price. P/E is not, because it needs a
+    // price, and it is suppressed on a loss (eps <= 0) rather than published as
+    // a negative multiple.
+    const eps = s.eps == null ? null : Number(s.eps);
+
     return {
       id: s.id,
       ticker: s.ticker,
@@ -375,6 +402,9 @@ export async function publishSnapshot(
       dps_latest: dpsLatest,
       dps_year: dpsYear,
 
+      eps,
+      eps_year: s.eps_year == null ? null : Number(s.eps_year),
+
       // Gated block. Every one of these is null when pricesEnabled is false.
       close_kes: close,
       prev_close: prev,
@@ -383,6 +413,9 @@ export async function publishSnapshot(
         : null,
       price_as_of: px?.asOf ?? null,
       market_cap: close != null && shares != null ? close * shares : null,
+      pe: close != null && eps != null && eps > 0
+        ? Number((close / eps).toFixed(2))
+        : null,
       // Yield needs a price. No licence, no price, no yield: the app shows the
       // declared dividend per share on its own instead.
       div_yield: close != null && close > 0 && dpsLatest != null
@@ -418,8 +451,8 @@ export async function publishSnapshot(
     schema: 2,
     as_of: asOf,
     generated_at: new Date().toISOString(),
-    funds: fundsWithSpark as SnapshotV2["funds"],
-    insurers: (insurers ?? []) as SnapshotInsurer[],
+    funds: fundsWithSpark,
+    insurers: insurers ?? [],
     companies: (companies ?? []) as SnapshotCompany[],
     agents,
     fx: [...fxByPair.values()],

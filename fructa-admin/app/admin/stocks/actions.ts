@@ -43,13 +43,21 @@ export async function addStock(formData: FormData) {
   const id = slugify(name);
   if (!id) return;
 
+  // Segment defaults to NULL, never to "MIM".
+  //
+  // It used to default to MIM, so every stock added without one silently
+  // acquired a market segment nobody had established. All 64 seeded stocks
+  // carry segment NULL on purpose: the NSE register gives a reliable SECTOR and
+  // an unreliable MIM/AIM/GEMS assignment, and we do not know it. Defaulting to
+  // MIM would write a fact into the exact distinction the Learn course teaches.
+  // "Not set" is the truth. Say it.
   const segRaw = strOrNull(formData.get("segment"));
   await supabaseAdmin().from("stocks").insert({
     id,
     ticker,
     name,
     sector: strOrNull(formData.get("sector")),
-    segment: segRaw && SEGMENTS.includes(segRaw) ? segRaw : "MIM",
+    segment: segRaw && SEGMENTS.includes(segRaw) ? segRaw : null,
     active: true,
   });
   await republishSnapshot();
@@ -65,6 +73,13 @@ export async function updateStock(formData: FormData) {
   const segRaw = strOrNull(formData.get("segment"));
   const sharesRaw = numOrNull(formData.get("shares_outstanding"));
 
+  // EPS may be NEGATIVE (Kenya Airways has lost money for most of a decade), so
+  // this must not coerce a loss to null or clamp it to zero. The app decides
+  // what to do with a negative: it suppresses P/E, because a negative multiple
+  // is not a small P/E, it is a meaningless one.
+  const epsRaw = numOrNull(formData.get("eps"));
+  const epsYearRaw = numOrNull(formData.get("eps_year"));
+
   await supabaseAdmin().from("stocks").update({
     name: String(formData.get("name")),
     ticker: String(formData.get("ticker") ?? "").trim().toUpperCase(),
@@ -79,6 +94,8 @@ export async function updateStock(formData: FormData) {
     listed_on: strOrNull(formData.get("listed_on")),
     // bigint column, so no stray decimals
     shares_outstanding: sharesRaw == null ? null : Math.round(sharesRaw),
+    eps: epsRaw,
+    eps_year: epsYearRaw == null ? null : Math.round(epsYearRaw),
   }).eq("id", id);
 
   await republishSnapshot();

@@ -93,20 +93,6 @@ class InsurerDetailPage extends ConsumerWidget {
         landedPremium(motorBase, levyPct: levyPct, stamp: stamp);
 
     // Peer set for the ranking chart: same category, same inputs as this quote.
-    double amountOf(Insurer x) => isTravel
-        ? (x.travelPrice(region!, days: days, pax: pax) ?? 0)
-        : landedPremium(x.quote(value, cls: cls, cover: cover) ?? 0,
-            levyPct: levyPct, stamp: stamp);
-    final peers = isInfo
-        ? const <({String id, String name, double amount})>[]
-        : ref
-        .watch(insurersProvider)
-        .where((x) => isTravel ? x.hasTravel : x.offers(cls, cover))
-        .map((x) => (id: x.id, name: x.name, amount: amountOf(x)))
-        .where((r) => r.amount > 0)
-        .toList()
-      ..sort((a, b) => a.amount.compareTo(b.amount));
-
     final shownPrice = isTravel ? travelPrice : motorLanded;
 
     // The lead now names the CLASS, not just the product. "Motor comprehensive"
@@ -206,104 +192,81 @@ class InsurerDetailPage extends ConsumerWidget {
               levy: levyAmount(motorBase, levyPct),
               stamp: stamp,
             ),
-          // trust: regulatory standing, rating, ratios, complaints
-          InsurerTrustPanel(i),
-
-          // How this ranks, on the SAME BarChart the rest of the feature uses.
+          // ── SCREEN 02 ENDS HERE FOR A PRICED INSURER ──────────────────
           //
-          // This section was the last bespoke chart in the insure tree: its own
-          // bars, its own animation, and full legal names ("CIC General
-          // Insurance Limited") where every other chart shortens them. That is
-          // why the page read as a different app below the fold.
+          // Everything below this line is gated to the INFORMATIONAL page, and
+          // that is the design, not an oversight.
           //
-          // Cheapest gold, dearest red, the viewed insurer highlighted. The
-          // brand tint is deliberately NOT used for the bars: an insurer with
-          // no brand_color falls back to a generic colour, and a chart whose
-          // meaning depends on a nullable column is a chart that lies when the
-          // column is null.
-          if (peers.length >= 2) _PeerChart(rows: peers, meId: i.id),
-
-          // contact
-          if (_hasContact(i)) ...[
-            InsureH2(t('insure.reachThem'), small: t('insure.reachSmall')),
-            _ContactGrid(insurer: i),
-          ],
-
-          // cover
-          if (i.benefits.isNotEmpty) ...[
-            InsureH2(
-                isTravel ? t('insure.inThePlan') : t('insure.whatsCovered')),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  for (var b = 0; b < i.benefits.length; b++)
-                    CoverRow(i.benefits[b],
-                        tint: brand, last: b == i.benefits.length - 1),
-                ],
+          // A page that is quoting someone a price has exactly one job. The
+          // trust surface (the rating arc, the market-share chart, the
+          // regulatory timeline, the contact grid) belongs on the page for an
+          // insurer we CANNOT price, where the facts are all we have to offer.
+          // Stacking it under a live quote buries the agent and the reviews,
+          // which are the two things that actually convert, under three
+          // sections of chart.
+          //
+          // The trust signal a quoted insurer needs is the licence badge and
+          // the GCR grade, and those are already in the header, where they are
+          // read in the first second rather than the fortieth.
+          if (isInfo) ...[
+            InsurerTrustPanel(i),
+            if (_hasContact(i)) ...[
+              InsureH2(t('insure.reachThem'), small: t('insure.reachSmall')),
+              _ContactGrid(insurer: i),
+            ],
+            if (i.benefits.isNotEmpty) ...[
+              InsureH2(
+                isTravel ? t('insure.inThePlan') : t('insure.whatsCovered'),
               ),
-            ),
+              for (var b = 0; b < i.benefits.length; b++)
+                CoverRow(
+                  i.benefits[b],
+                  tint: c.accent,
+                  last: b == i.benefits.length - 1,
+                ),
+            ],
           ],
 
-          // signals
-          if (i.signals.isNotEmpty) ...[
-            InsureH2(t('insure.signals')),
-            for (var s = 0; s < i.signals.length; s++)
-              SignalRow(
-                tag: i.signals[s].label,
-                text: i.signals[s].text,
-                tone: _tone(i.signals[s].tag),
-                showDivider: s < i.signals.length - 1,
-              ),
-            InsureFoot(t('insure.signalsFoot')),
-          ],
-
-          // IRA classes
-          if (i.classes.isNotEmpty) ...[
-            InsureH2(t('insure.classes'), small: t('insure.classesSmall')),
-            ClassChips(i.classes),
-          ],
-
-          // agents
+          // Agents. On screen 02 this is the first thing under the breakdown:
+          // a human who can actually bind the policy.
           if (agents.isNotEmpty) ...[
-            InsureH2(t('insure.talkAgent')),
+            InsureH2(
+              t('insure.talkAgent'),
+              small: t('insure.agentsNear', {'n': '${agents.length}'}),
+            ),
             for (var a = 0; a < agents.length; a++)
               AgentRow(
                 name: agents[a].name,
                 phone: agents[a].phone ?? '',
-                avatarColor: brand,
-                onCall: (agents[a].phone ?? '').isEmpty
+                onCall: agents[a].phone == null
                     ? null
                     : () => openTel(agents[a].phone!),
-                onWhatsApp: (agents[a].whatsapp && agents[a].phone != null)
-                    ? () => openWhatsApp(agents[a].phone!)
-                    : null,
+                onWhatsApp: agents[a].phone == null || !agents[a].whatsapp
+                    ? null
+                    : () => openWhatsApp(agents[a].phone!),
                 showDivider: a < agents.length - 1,
               ),
           ],
 
-          // Only when the sticky bar is NOT carrying it. Two identical gold
-          // buttons a thumb apart is a bug, not emphasis.
+          // The in-body CTA exists ONLY where the sticky bar does not: an
+          // unpriced insurer has no premium to pin to the foot. Two identical
+          // gold buttons a thumb apart is a bug, not emphasis.
           if (isInfo || shownPrice <= 0)
             CtaFull(
               label: isTravel
                   ? t('insure.getTravelQuote')
                   : t('insure.getQuote'),
-              tint: brand,
+              tint: c.accent,
               icon: Icons.north_east,
               onTap: () => _primaryAction(i),
             ),
-          if (i.website != null)
+          if (isInfo && i.website != null)
             CtaGhost(
               label: t('insure.officialSite'),
               icon: Icons.language,
               onTap: () => openWeb(i.website!),
             ),
-          // Reviews sit BELOW the trust panel, below the price, and below the
-          // quote CTA. That order is the argument: a GCR rating and a
-          // stranger's opinion are different kinds of thing. Facts rank,
-          // opinions colour. Reviews never touch the sort order of a quote and
-          // never feed the trust panel.
+
           InsurerReviews(i),
           Disclaimer(rcText(cfg, 'insure.disc.detail')),
         ],
@@ -829,40 +792,6 @@ class _StickyQuoteBar extends StatelessWidget {
   }
 }
 
-/// Premium versus peers, on the shared BarChart.
-class _PeerChart extends StatelessWidget {
-  const _PeerChart({required this.rows, required this.meId});
-  final List<({String id, String name, double amount})> rows;
-  final String meId;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    final dearest = rows.last.amount;
-    final last = rows.length - 1;
-    if (dearest <= 0) return const SizedBox.shrink();
-
-    return BarChart(
-      title: t('insure.rank'),
-      subtitle: t('insure.rankSub'),
-      labelWidth: 92,
-      bars: [
-        for (var k = 0; k < rows.length; k++)
-          BarDatum(
-            label: shortInsurerName(rows[k].name),
-            value: rows[k].amount / dearest,
-            display: kesCompact(rows[k].amount),
-            color: rows[k].id == meId
-                ? c.accent
-                : k == last
-                    ? c.down
-                    : c.line2,
-            highlight: rows[k].id == meId,
-          ),
-      ],
-    );
-  }
-}
 
 // ── V8 detail header ───────────────────────────────────────────────────────
 
@@ -889,7 +818,36 @@ class _Identity extends StatelessWidget {
     // older free-text field, kept as a fallback so nothing regresses.
     final year = i.licenseYear ?? i.licensedSince;
 
-    return Padding(
+    return Stack(
+      // Clip.none, and this is why the wash rendered as a hard-edged red BOX
+      // instead of a soft bloom: a Stack clips to its own bounds by default
+      // (Clip.hardEdge), and its bounds are set by the non-positioned child,
+      // which is a 70px-tall row. The 260px circle was being sliced into a
+      // rectangle by the Stack it lives in.
+      clipBehavior: Clip.none,
+      children: [
+        // .wash: the ambient brand bloom behind the header. IgnorePointer, and
+        // it must sit UNDER the row, not around it, or it eats the taps.
+        Positioned(
+          left: -60,
+          top: -90,
+          child: IgnorePointer(
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    brand.withValues(alpha: 0.14),
+                    brand.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Padding(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
       child: Row(
         children: [
@@ -963,6 +921,8 @@ class _Identity extends StatelessWidget {
           ),
         ],
       ),
+        ),
+      ],
     );
   }
 }

@@ -67,6 +67,18 @@ export interface SnapshotFund {
   best_month: number | null;      // best monthly return, trailing 12 mo, %
   worst_month: number | null;     // worst monthly return, trailing 12 mo, %
   returns_as_of: string | null;   // YYYY-MM-DD, fact-sheet month
+
+  // Priced (NAV) fields (migration 0040). A basis='nav' fund quotes a unit
+  // price instead of a yield. Added to the snapshot in July 2026: the columns
+  // and the admin writer shipped with 0040, but the builder never selected
+  // them, so no NAV ever reached the app. Null for every yield fund.
+  price_per_unit: number | null;    // NAV per unit, fund's own currency
+  price_as_of: string | null;       // YYYY-MM-DD, quote date
+  distribution_pct: number | null;  // income distribution / interest %
+
+  // C2 sparkline, attached by the builder (not a column). Absent when the
+  // fund has fewer than 2 history points in the window.
+  spark?: number[];
 }
 
 export interface SnapshotCompany {
@@ -249,6 +261,13 @@ export interface SnapshotStockDividend {
   financial_year: number;
   kind: string;                 // interim | final | special
   dps_kes: number;              // dividend per share, KES
+  declared_on: string | null;
+  // THE date that matters to a buyer. To receive a dividend you must own the
+  // share on the books when they close, so this is a deadline, not trivia. It
+  // was in the table from 0047 and never published, which meant the app knew
+  // when a dividend would be PAID but not by when you had to own the share to
+  // get it. That is the wrong half of the fact.
+  book_closure: string | null;
   payment_date: string | null;
   source_url: string | null;
 }
@@ -273,13 +292,30 @@ export interface SnapshotStock {
   dps_latest: number | null;    // sum of all kinds in the most recent FY
   dps_year: number | null;      // that FY
 
-  // Price block. LICENCE GATED. All null when stocks.prices_enabled is false.
+  // Earnings. Public, admin-typed off the company's own results. Always
+  // published, because EPS is a fact about the company and not a price.
+  eps: number | null;           // may be NEGATIVE for a loss-making company
+  eps_year: number | null;      // the FY the EPS belongs to
+
+  // Price block. All null when the stocks.prices_enabled KILL SWITCH is off.
+  //
+  // This used to be labelled "LICENCE GATED", which was wrong. End-of-day
+  // closes are facts of public record, printed in the Kenyan press daily, and
+  // the change, market cap, yield and sparkline are our own figures derived
+  // from our own stored series. Nothing here is waiting on an agreement. The
+  // flag exists so a bad parse or a dead source can be switched off in Config
+  // and vanish from the app on the next rebuild, with no release.
   close_kes: number | null;
   prev_close: number | null;
   change_pct: number | null;
   price_as_of: string | null;
   market_cap: number | null;    // close x shares_outstanding
   div_yield: number | null;     // dps_latest / close, % (needs a price)
+
+  // Price / earnings. Needs BOTH a price and a positive EPS, so it rides with
+  // the price block. Null on a loss: a negative multiple is not a cheap stock,
+  // it is a meaningless number, and the app must not print one.
+  pe: number | null;
   spark: number[] | null;
 }
 

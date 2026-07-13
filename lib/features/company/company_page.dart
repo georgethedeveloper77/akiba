@@ -11,6 +11,7 @@ import '../../core/i18n.dart';
 import '../../core/insights/signal_engine.dart';
 import '../../core/push.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/follow_star.dart';
 import '../../core/widgets/kit.dart';
 import '../../data/models/agent.dart';
 import '../../data/models/company.dart';
@@ -393,7 +394,7 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
                 MaterialPageRoute(builder: (_) => const AlertsPage())),
             icon: Icon(Icons.notifications_none, color: c.muted),
           ),
-          _FollowStar(
+          FollowStar(
             following: following,
             tint: tint,
             onToggle: () =>
@@ -804,84 +805,6 @@ class _CompanyPageState extends ConsumerState<CompanyPage> {
         SignalTag.watch => t('company.tag.watch'),
         SignalTag.note => t('company.tag.note'),
       };
-}
-
-/// App-bar follow control. A watchlist star that fills with the fund's brand
-/// [tint] when following and outlines when not, with a spring "pop" on every
-/// toggle so the state change reads. Following drives rate alerts (it's a
-/// subscription, not a bookmark), so the tooltip says Follow / Following.
-class _FollowStar extends StatefulWidget {
-  const _FollowStar({
-    required this.following,
-    required this.tint,
-    required this.onToggle,
-  });
-
-  final bool following;
-  final Color tint;
-  final VoidCallback onToggle;
-
-  @override
-  State<_FollowStar> createState() => _FollowStarState();
-}
-
-class _FollowStarState extends State<_FollowStar>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 460),
-  );
-
-  late final Animation<double> _pop = TweenSequence<double>([
-    TweenSequenceItem(
-      tween: Tween(begin: 1.0, end: 1.35).chain(
-        CurveTween(curve: Curves.easeOutCubic),
-      ),
-      weight: 38,
-    ),
-    TweenSequenceItem(
-      tween: Tween(begin: 1.35, end: 1.0).chain(
-        CurveTween(curve: Curves.elasticOut),
-      ),
-      weight: 62,
-    ),
-  ]).animate(_ctrl);
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _tap() {
-    widget.onToggle();
-    _ctrl.forward(from: 0);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.c;
-    final on = widget.following;
-    return IconButton(
-      tooltip: on ? t('company.following') : t('company.follow'),
-      onPressed: _tap,
-      icon: ScaleTransition(
-        scale: _pop,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          transitionBuilder: (child, anim) => FadeTransition(
-            opacity: anim,
-            child: ScaleTransition(scale: anim, child: child),
-          ),
-          child: Icon(
-            on ? Icons.star_rounded : Icons.star_border_rounded,
-            key: ValueKey(on),
-            color: on ? widget.tint : c.muted,
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ── local building blocks (mockup cards) ─────────────────────────────────

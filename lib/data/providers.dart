@@ -6,6 +6,7 @@ import 'models/alert.dart';
 import 'models/fund.dart';
 import 'models/holding.dart';
 import 'models/rate_history.dart';
+import 'models/stock_history.dart';
 import 'repositories/holdings_repository.dart';
 import 'repositories/rates_repository.dart';
 import 'sources/local/rates_cache.dart';
@@ -75,6 +76,13 @@ final fundsByIdProvider = Provider<Map<String, Fund>>((ref) {
 final historyProvider = FutureProvider.autoDispose
     .family<List<RateHistory>, String>((ref, fundId) {
       return ref.read(ratesApiProvider).getHistory(fundId);
+    });
+
+/// Per-stock price history for the detail chart. autoDispose, so leaving the
+/// page drops it: this is the one read in the app that is not the snapshot.
+final stockHistoryProvider = FutureProvider.autoDispose
+    .family<List<StockHistory>, String>((ref, stockId) {
+      return ref.read(ratesApiProvider).getStockHistory(stockId);
     });
 
 // ── holdings ─────────────────────────────────────────────────────────
@@ -149,6 +157,46 @@ class SubscriptionsNotifier extends Notifier<Set<String>> {
 final subscriptionsProvider =
     NotifierProvider<SubscriptionsNotifier, Set<String>>(
       SubscriptionsNotifier.new,
+    );
+
+// ── stock follows ────────────────────────────────────────────────────────────
+/// Followed STOCKS, kept in their own Hive key and their own OneSignal tag
+/// namespace (`follow_stock_<id>`, see Push.stockTagKey).
+///
+/// Separate from `subscriptionsProvider` on purpose. Fund ids and stock ids are
+/// both slugs, so one shared set could not tell them apart, and a fund follow
+/// would have silently subscribed the user to a stock with the same slug. It
+/// also means every fund tag already sitting on an installed device keeps
+/// working untouched.
+///
+/// What a stock follow actually buys you is the book-closure alert: own the
+/// share by the date the register closes or you do not get the dividend. It is
+/// NOT a price alert. A daily "SCOM moved 2%" across sixty four counters is
+/// noise, and it teaches the exact reflex the Learn course argues against.
+class StockSubscriptionsNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() =>
+      ((Hive.box('settings').get('stockSubs', defaultValue: <String>[]) as List)
+              .cast<String>())
+          .toSet();
+
+  Future<void> toggle(String stockId) async {
+    final s = {...state};
+    final added = s.add(stockId);
+    if (!added) s.remove(stockId);
+    await Hive.box('settings').put('stockSubs', s.toList());
+    state = s;
+    if (added) {
+      Push.followStock(stockId);
+    } else {
+      Push.unfollowStock(stockId);
+    }
+  }
+}
+
+final stockSubscriptionsProvider =
+    NotifierProvider<StockSubscriptionsNotifier, Set<String>>(
+      StockSubscriptionsNotifier.new,
     );
 
 // ── alerts feed ──────────────────────────────────────────────────────

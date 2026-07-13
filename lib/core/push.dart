@@ -15,6 +15,16 @@ class Push {
   static String tagKey(String fundId) =>
       'follow_${fundId.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}';
 
+  /// Stock follows live in their OWN namespace.
+  ///
+  /// Fund ids and stock ids are both slugs, so `follow_<id>` could in principle
+  /// collide across the two tables and a fund follow would silently subscribe
+  /// you to a stock. Prefixing removes the possibility entirely. It also means
+  /// the existing fund tags on every installed device keep working untouched:
+  /// nothing here renames a tag that is already out in the world.
+  static String stockTagKey(String stockId) =>
+      'follow_stock_${stockId.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}';
+
   /// Initialize OneSignal and wire the tap handler. Does NOT request
   /// permission here  the prompt is raised at the onboarding "Turn on alerts"
   /// moment (and from Settings), so first launch never cold-prompts.
@@ -47,6 +57,19 @@ class Push {
       OneSignal.User.addTags({tagKey(fundId): 'true'});
   static void unfollow(String fundId) =>
       OneSignal.User.removeTag(tagKey(fundId));
+
+  static void followStock(String stockId) =>
+      OneSignal.User.addTags({stockTagKey(stockId): 'true'});
+  static void unfollowStock(String stockId) =>
+      OneSignal.User.removeTag(stockTagKey(stockId));
+
+  /// Re-apply followed STOCK tags on launch, mirroring [sync].
+  static void syncStocks(Set<String> stockIds) {
+    if (stockIds.isEmpty) return;
+    OneSignal.User.addTags({
+      for (final id in stockIds) stockTagKey(id): 'true',
+    });
+  }
 
   // Re-apply all followed tags on launch (device may have been reset).
   static void sync(Set<String> fundIds) {

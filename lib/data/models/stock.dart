@@ -8,6 +8,8 @@ class StockDividend {
   final int financialYear;
   final String kind; // interim | final | special
   final double dpsKes; // dividend per share, KES
+  final String? declaredOn; // YYYY-MM-DD
+  final String? bookClosure; // YYYY-MM-DD
   final String? paymentDate; // YYYY-MM-DD
   final String? sourceUrl;
 
@@ -15,6 +17,8 @@ class StockDividend {
     required this.financialYear,
     required this.kind,
     required this.dpsKes,
+    this.declaredOn,
+    this.bookClosure,
     this.paymentDate,
     this.sourceUrl,
   });
@@ -23,9 +27,33 @@ class StockDividend {
     financialYear: (j['financial_year'] as num).toInt(),
     kind: (j['kind'] ?? 'final') as String,
     dpsKes: (j['dps_kes'] as num).toDouble(),
+    declaredOn: j['declared_on'] as String?,
+    bookClosure: j['book_closure'] as String?,
     paymentDate: j['payment_date'] as String?,
     sourceUrl: j['source_url'] as String?,
   );
+
+  DateTime? get booksCloseAt =>
+      bookClosure == null ? null : DateTime.tryParse(bookClosure!);
+
+  /// Days until the register closes. Negative once it has passed, null when the
+  /// company has not announced a date (which is common: several 2026 dividends
+  /// are printed as SUBJECT TO APPROVAL). Null must render as "not announced",
+  /// never as zero days, or the app invents a deadline the company never set.
+  int? get daysToBookClosure {
+    final d = booksCloseAt;
+    if (d == null) return null;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return DateTime(d.year, d.month, d.day).difference(today).inDays;
+  }
+
+  /// Still buyable for this dividend. To receive it you must be on the register
+  /// when the books close, so this is a deadline, not a detail.
+  bool get isUpcoming {
+    final n = daysToBookClosure;
+    return n != null && n >= 0;
+  }
 }
 
 /// An NSE-listed company.
@@ -34,13 +62,21 @@ class StockDividend {
 /// (conditionally) a price, not a yield. Modelling it as a Fund would have
 /// forced a fake `currentRate` onto something that does not have one.
 ///
-/// THE PRICE BLOCK IS NULLABLE ON PURPOSE. NSE market data is subject to a
-/// redistribution licence, so the snapshot publishes price/change/market cap/
-/// yield/spark only when the `stocks.prices_enabled` config key is true. Every
-/// price-derived widget below is gated on [hasPrice], which means the page
-/// degrades cleanly into a dividend + how-to-buy surface with no licence, and
-/// lights up with no app release once one exists. Do not "helpfully" default
-/// any of these to 0: a missing price is not a price of zero.
+/// THE PRICE BLOCK IS NULLABLE ON PURPOSE, but no longer for the reason this
+/// comment used to give. It said prices were withheld pending an NSE
+/// redistribution licence. They are not: Fructa publishes end-of-day closes,
+/// which are facts of public record printed in the Kenyan press every day, and
+/// the day change and sparkline are Fructa's own derived figures on its own
+/// stored series. `stocks.prices_enabled` is now a KILL SWITCH, not a licence
+/// gate: flip it off and every price surface disappears with no release, which
+/// is what you want when a parse goes wrong or a source goes down.
+///
+/// The nullability still matters, for a better reason. A counter that did not
+/// trade has no price today, and roughly ten of the sixty four do not trade on
+/// a given day. Every price-derived widget is gated on [hasPrice] so those
+/// stocks render as a dividend and how-to-buy surface instead of a fake number.
+/// Do not "helpfully" default any of these to 0: a missing price is not a price
+/// of zero, and a share that did not trade did not trade at nothing.
 class Stock {
   // Facts. Always present.
   final String id;
@@ -68,6 +104,18 @@ class Stock {
   final String? priceAsOf;
   final double? marketCap;
   final double? divYield;
+
+  /// Price / earnings. Null when we have no price, no EPS, or a LOSS.
+  ///
+  /// The snapshot suppresses it on eps <= 0 rather than publishing a negative
+  /// multiple, because "-4.2" is not a cheap stock, it is a meaningless number,
+  /// and a reader scanning a triad will read a small figure as good value.
+  final double? pe;
+
+  /// The financial year the EPS behind [pe] belongs to. Shown alongside, because
+  /// a P/E built from today's price and a three year old EPS is a coincidence,
+  /// not a valuation.
+  final int? epsYear;
   final List<double> spark;
 
   const Stock({
@@ -92,6 +140,8 @@ class Stock {
     this.priceAsOf,
     this.marketCap,
     this.divYield,
+    this.pe,
+    this.epsYear,
     this.spark = const [],
   });
 
@@ -119,19 +169,34 @@ class Stock {
     priceAsOf: j['price_as_of'] as String?,
     marketCap: (j['market_cap'] as num?)?.toDouble(),
     divYield: (j['div_yield'] as num?)?.toDouble(),
+    pe: (j['pe'] as num?)?.toDouble(),
+    epsYear: (j['eps_year'] as num?)?.toInt(),
     spark: ((j['spark'] as List?) ?? const [])
         .whereType<num>()
         .map((v) => v.toDouble())
         .toList(),
   );
 
-  /// The single gate every price-derived widget checks. False means the app has
-  /// no licensed price and must show no price, no day change, no market cap, no
-  /// yield and no chart.
+  /// The single gate every price-derived widget checks. False means we have no
+  /// price for this counter (it did not trade, or prices are switched off) and
+  /// the page must show no price, no day change, no market cap, no yield and no
+  /// chart rather than a plausible-looking zero.
   bool get hasPrice => closeKes != null;
 
-  /// A dividend figure exists. This is what makes the page useful with no
-  /// price licence at all.
+  /// The dividend a buyer can still act on: the register has not closed yet.
+  /// Null when nothing is pending, which is the normal state most of the year.
+  StockDividend? get upcomingDividend {
+    StockDividend? soonest;
+    for (final d in dividends) {
+      if (!d.isUpcoming) continue;
+      final n = d.daysToBookClosure!;
+      if (soonest == null || n < soonest.daysToBookClosure!) soonest = d;
+    }
+    return soonest;
+  }
+
+  /// A dividend figure exists. This is what makes the page useful even for a
+  /// counter that did not trade today.
   bool get hasDividend => dpsLatest != null && dpsLatest! > 0;
 
   /// Day move direction. Null when there is no price to compare.

@@ -4,7 +4,12 @@ import { useEffect, useState, useTransition } from "react";
 import { addStock } from "./actions";
 import { IconPlus, IconX } from "../_icons";
 
+// "" is first and is the default. Segment is a fact we usually do NOT have: the
+// NSE register carries sector reliably and MIM/AIM/GEMS unreliably. A dropdown
+// that defaults to MIM turns "I did not fill this in" into "this company is on
+// the main market", which is a claim nobody made.
 const SEGMENTS: [string, string][] = [
+  ["", "Not set"],
   ["MIM", "Main Investment Market"],
   ["AIM", "Alternative Investment Market"],
   ["GEMS", "Growth Enterprise Market"],
@@ -15,7 +20,7 @@ export function AddStock() {
   const [name, setName] = useState("");
   const [ticker, setTicker] = useState("");
   const [sector, setSector] = useState("");
-  const [segment, setSegment] = useState("MIM");
+  const [segment, setSegment] = useState("");
   const [pending, start] = useTransition();
 
   const valid = name.trim() !== "" && ticker.trim() !== "";
@@ -31,7 +36,7 @@ export function AddStock() {
     setName("");
     setTicker("");
     setSector("");
-    setSegment("MIM");
+    setSegment("");
   }
 
   function submit() {
@@ -39,7 +44,7 @@ export function AddStock() {
     const fd = new FormData();
     fd.set("name", name.trim());
     fd.set("ticker", ticker.trim().toUpperCase());
-    fd.set("segment", segment);
+    if (segment) fd.set("segment", segment);
     if (sector.trim()) fd.set("sector", sector.trim());
     start(async () => {
       await addStock(fd);
